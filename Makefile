@@ -22,8 +22,11 @@ help:
 
 setup: venv model ## create the venv and download the model
 
-venv: ## uv sync with the torch extra (jevlike comparison / HF cross-checks)
-	uv sync --extra torch
+# One backend extra per platform. mlx must not be installed off Apple silicon:
+# it resolves on Linux without its libmlx.so, and transformers then dies
+# importing it, which breaks the torch backend too.
+venv: ## uv sync with the backend extra for this platform (mlx on macOS, torch elsewhere)
+	uv sync $(if $(filter Darwin,$(shell uname -s)),--extra mlx --extra torch,--extra torch)
 
 model: ## download $(HF_REPO) into $(MODEL) if missing
 	@test -f $(MODEL)/config.json || hf download $(HF_REPO) --local-dir $(MODEL)

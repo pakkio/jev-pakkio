@@ -82,7 +82,18 @@ make bench       # latency benchmark
 make eval DATA=data/synthetic/test.jsonl
 ```
 
-`make setup` also installs the optional `torch` extra, used only for the jevlike comparison and HF cross-checks.
+`make setup` picks the backend extra for the platform: `mlx` (plus `torch`, for the jevlike comparison
+and HF cross-checks) on macOS, `torch` alone elsewhere. Installing by hand:
+
+```sh
+uv sync --extra mlx --extra torch   # Apple silicon
+uv sync --extra torch               # NVIDIA or CPU
+```
+
+Both backends are optional extras, so a bare `uv sync` installs neither. `mlx` in particular must not
+be installed off Apple silicon: it resolves on Linux without its `libmlx.so`, and `transformers`
+finds the metadata, tries to import it, and dies -- taking the torch backend down with it.
+
 `make` on macOS needs the Xcode licence accepted (`sudo xcodebuild -license accept`) or Homebrew's `gmake`.
 
 ## Usage
@@ -109,9 +120,7 @@ make eval DATA=data/synthetic/test.jsonl
 
 ## Server
 
-Loads the model once. The measured Apple silicon MLX path answers scoring requests in about
-90 ms each; PyTorch latency depends on your CPU/GPU. Use `uv run openjev serve` on any
-supported platform, or the Make shortcut below on macOS.
+Loads the model once. The measured Apple silicon MLX path answers scoring requests in about 90 ms each; PyTorch latency depends on your CPU/GPU. Use `uv run openjev serve` on any supported platform, or the Make shortcut below on macOS. (The MLX path has no container story, because Linux containers cannot reach the Apple GPU.)
 
 ```sh
 make serve                                     # = .venv/bin/openjev serve --port 8000
@@ -219,11 +228,68 @@ print(s.last_timing)
 
 | norm | score | use when |
 |---|---|---|
-| `mean` (default) | sum of option-token log-probs divided by token count | options differ in length |
-| `sum` | total log-prob | options are the same length or you want raw likelihood |
+| `mean` (default) | sum of option-token log-probs divided by token count | options are the same length in tokens |
+| `sum` | total log-prob | options differ in length, or you want raw likelihood |
 | `pmi` | sum minus the option's unconditional log-prob (BOS-only context) | options differ in base-rate plausibility; costs one extra batched pass |
 
-## Measured on M5 Pro, 64 GB (bf16, mlx-lm)
+Check the `n_tokens` column before trusting the ranking: when it differs between options, the choice
+of norm, not the model, is deciding. Asking Qwen 2.5 1.5B for the capital of Italy, `" Torino"` is
+two tokens and `" Roma"` is one, so `mean` divides Torino's much worse total (-7.85, against Roma's
+-4.04) by two and puts it first at 49.9%. `sum` gives Roma 87.3%. `pmi` is worse again here at 85.1%
+for Torino, because it divides out the unconditional probability and "Torino" is the rarer word --
+the base rate was the signal, not the nuisance. Tokenisation makes this model-specific: Gemma 3 has
+all four city names as single tokens, so `mean` and `sum` agree and the trap never appears.
+
+## PyTorch backend (NVIDIA / CPU)
+
+Every command takes `--backend torch`, which swaps `mlx`/`mlx-lm` for `transformers`+`torch` and
+keeps the same design: prefill the context once, replicate its KV cache across the option batch,
+score in one padded forward pass. `openjev check` verifies that path against naive per-option
+re-encoding on either backend. The server also reads `OPENJEV_BACKEND`.
+
+```sh
+openjev score --backend torch --norm sum --model Qwen/Qwen2.5-1.5B-Instruct \
+    --context "The capital of France is" --option " Paris" --option " Berlin"
+
+openjev check  --backend torch --model Qwen/Qwen2.5-1.5B-Instruct   # cached vs naive
+openjev serve  --backend torch --model google/gemma-3-4b-it --quantize 4bit
+```
+
+### Quantisation (`--quantize`)
+
+`none` (default) is bf16; `8bit` and `4bit` go through bitsandbytes, `4bit` as NF4 with double
+quantisation and a bf16 compute dtype. The server also reads `OPENJEV_QUANTIZE`. Quantised weights
+are pinned to GPU 0, because bitsandbytes cannot run a module that accelerate parked on the CPU and
+`device_map="auto"` offloads on a small card even when the model would fit.
+
+Gemma 3 4B it on an RTX A2000 Laptop (4 GB), 160 examples, bf16 as the reference:
+
+| `--quantize` | VRAM | median latency | agreement with bf16 | same, where bf16 is confident |
+|---|---|---|---|---|
+| `none` (bf16) | 2.6 GB + **2.9B params offloaded to CPU** | 2114 ms | -- | -- |
+| `8bit` | 4.8 GB (**over the 4 GB card**) | 963 ms | 0.825 | 0.858 |
+| `4bit` | 3.1 GB | **211 ms** | 0.825 | 0.875 |
+
+bf16 does not fit: two thirds of the weights end up on the CPU and every forward pass streams them
+back, which is where the 2.1 s comes from. `8bit` is the worst of the three here -- it overflows the
+card *and* is no more faithful than `4bit`. Note what the last column means: even at its best, 4-bit
+flips about one confident decision in eight. Fine for ranking, not free if you depend on the
+probabilities being calibrated. Smaller models degrade more, not less (Qwen 0.5B agrees with its own
+bf16 only 0.675 of the time), so quantise the big model rather than shrinking to a small one.
+
+Same workload as the MLX table below (202-token context, 8 options, 242 option tokens), Gemma 3 4B
+in 4-bit on the same 4 GB card:
+
+| path | median latency |
+|---|---|
+| context cached once, options batched | 0.63 s |
+| context re-encoded per option, no cache | 4.25 s |
+
+`openjev check` compares log-probs with an absolute tolerance (`--tol`, default 0.5) that does not
+scale with context length, so quantised runs over long contexts need `--tol 1.0` to pass on what is
+ordinary NF4 noise (0.4% relative).
+
+## Measured on M5 Pro, 64 GB (MLX, bf16)
 
 Workload: 202-token context, 8 options, 242 option tokens total.
 
@@ -271,6 +337,9 @@ same split. If Gemma zero-shot is close to the trained head, Route B is enough; 
 - `openjev/head.py`: jevlike's cross-attention head in `mlx.nn`, save/load.
 - `openjev/train.py`: head training loop and evaluation (top-k, ECE, shuffled-context control).
 - `openjev/cli.py`: `openjev score | eval | bench | check | serve | features | train | eval-head`.
+- `openjev/{scorer,features,head,train}_torch.py`: the `--backend torch` counterparts of the four
+  modules above (`transformers` + `torch`, bitsandbytes quantisation). `systemone.py`, `server.py`
+  and `cli.py` are backend-agnostic and import a backend only when one is selected.
 - `demo/doom/`: Doom in the terminal, the server picks every action (`make doom`).
 - `models/`: downloaded weights (git-ignored).
 
