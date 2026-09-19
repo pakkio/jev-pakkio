@@ -8,7 +8,10 @@ import statistics
 import sys
 import time
 
-from .scorer import DEFAULT_MODEL, NORMS, OptionScorer, iter_jsonl
+# NOTE: backend modules are imported lazily in _get_backend_modules so that
+# `--help` and `--backend torch` work on machines without MLX (e.g. Linux).
+DEFAULT_MODEL = "models/gemma-3-4b-it"
+NORMS = ("mean", "sum", "pmi")
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
@@ -22,11 +25,41 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--chat", action="store_true",
                    help="wrap context in Gemma's chat template; options score as the reply")
     p.add_argument("--sep", default="", help="string inserted between context and option")
+    p.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
+                   help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
+    p.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
+                   help="torch backend only: load the weights quantised via bitsandbytes")
 
 
-def _scorer(args: argparse.Namespace) -> OptionScorer:
+def _get_backend_modules(backend: str):
+    """Load backend modules based on the backend name.
+
+    Returns (scorer, features, train, head) modules. The torch modules are
+    imported lazily so the MLX path has no torch dependency.
+    """
+    if backend == "torch":
+        from . import features_torch
+        from . import head_torch
+        from . import scorer_torch
+        from . import train_torch
+        return scorer_torch, features_torch, train_torch, head_torch
+    from . import features
+    from . import head
+    from . import scorer
+    from . import train
+    return scorer, features, train, head
+
+
+def _scorer(args: argparse.Namespace):
     t = time.perf_counter()
-    s = OptionScorer(args.model, batch_size=args.batch_size, chat=args.chat, sep=args.sep, adapter_path=args.adapter, backend=args.backend, device=args.device)
+    scorer_mod, _, _, _ = _get_backend_modules(args.backend)
+    kwargs = {}
+    quantize = getattr(args, "quantize", "none")
+    if args.backend == "torch":
+        kwargs["quantize"] = quantize
+    elif quantize != "none":
+        raise SystemExit("--quantize requires --backend torch")
+    s = scorer_mod.OptionScorer(args.model, batch_size=args.batch_size, chat=args.chat, sep=args.sep, adapter_path=args.adapter, device=args.device, **kwargs)
     print(f"loaded {args.model} in {time.perf_counter() - t:.1f}s", file=sys.stderr)
     return s
 
@@ -65,7 +98,8 @@ def cmd_score(args: argparse.Namespace) -> None:
 
 def cmd_eval(args: argparse.Namespace) -> None:
     scorer = _scorer(args)
-    rows = list(iter_jsonl(args.data))
+    scorer_mod, _, _, _ = _get_backend_modules(args.backend)
+    rows = list(scorer_mod.iter_jsonl(args.data))
     if args.limit:
         rows = rows[: args.limit]
     fixed = _read_options(args.fixed_options) if args.fixed_options else None
@@ -98,7 +132,7 @@ def cmd_eval(args: argparse.Namespace) -> None:
     }, indent=2))
 
 
-def _synthetic(scorer: OptionScorer, ctx_tokens: int, n_opts: int, opt_tokens: int, seed: int):
+def _synthetic(scorer, ctx_tokens: int, n_opts: int, opt_tokens: int, seed: int):
     rng = random.Random(seed)
     words = ("river stone cloud engine quiet market ledger signal orbit velvet "
              "harbour lantern cipher meadow granite").split()
@@ -165,42 +199,29 @@ def cmd_check(args: argparse.Namespace) -> None:
 def cmd_serve(args: argparse.Namespace) -> None:
     from .server import serve
 
-    serve(args.host, args.port, args.model, args.batch_size, backend=args.backend, device=args.device)
+    serve(args.host, args.port, args.model, args.batch_size, args.backend, getattr(args, "device", "auto"), getattr(args, "quantize", "none"))
 
 
 def cmd_features(args: argparse.Namespace) -> None:
-    import platform
-    if platform.system() != "Darwin" or platform.machine() != "arm64" or getattr(args, "backend", "auto") == "torch":
-        raise SystemExit("Feature extraction and head training/evaluation require MLX on Apple silicon. Scoring and serving support Windows/Linux via torch.")
-    from .features import extract_dataset
-
+    _, features_mod, _, _ = _get_backend_modules(args.backend)
     scorer = _scorer(args)
-    meta = extract_dataset(scorer, args.data, args.out, limit=args.limit, chat=args.chat, sep=args.sep,
-                           contextual=args.contextual)
+    meta = features_mod.extract_dataset(scorer, args.data, args.out, limit=args.limit, chat=args.chat, sep=args.sep,
+                                       contextual=args.contextual)
     print(json.dumps(meta))
 
 
 def cmd_train(args: argparse.Namespace) -> None:
-    import platform
-    if platform.system() != "Darwin" or platform.machine() != "arm64" or getattr(args, "backend", "auto") == "torch":
-        raise SystemExit("Feature extraction and head training/evaluation require MLX on Apple silicon. Scoring and serving support Windows/Linux via torch.")
-    from .train import train
-
-    print(json.dumps(train(args.train, args.validation, args.out, rank=args.rank, epochs=args.epochs,
-                           batch_size=args.batch_size, lr=args.learning_rate, seed=args.seed)))
+    _, _, train_mod, _ = _get_backend_modules(args.backend)
+    print(json.dumps(train_mod.train(args.train, args.validation, args.out, rank=args.rank, epochs=args.epochs,
+                                     batch_size=args.batch_size, lr=args.learning_rate, seed=args.seed)))
 
 
 def cmd_eval_head(args: argparse.Namespace) -> None:
-    import platform
-    if platform.system() != "Darwin" or platform.machine() != "arm64" or getattr(args, "backend", "auto") == "torch":
-        raise SystemExit("Feature extraction and head training/evaluation require MLX on Apple silicon. Scoring and serving support Windows/Linux via torch.")
-    from .features import FeatureSet
-    from .head import AttentionHead
-    from .train import evaluate
-
-    head, cfg = AttentionHead.load(args.checkpoint)
-    fs = FeatureSet(args.features)
-    print(json.dumps({"model": evaluate(head, fs), "shuffled_context": evaluate(head, fs, shuffle_context=True),
+    _, features_mod, train_mod, head_mod = _get_backend_modules(args.backend)
+    head_obj, cfg = head_mod.AttentionHead.load(args.checkpoint)
+    fs = features_mod.FeatureSet(args.features)
+    print(json.dumps({"model": train_mod.evaluate(head_obj, fs),
+                      "shuffled_context": train_mod.evaluate(head_obj, fs, shuffle_context=True),
                       "checkpoint": args.checkpoint, "rank": cfg["rank"]}, indent=2))
 
 
@@ -255,11 +276,15 @@ def main(argv: list[str] | None = None) -> None:
     tr.add_argument("--batch-size", type=int, default=64)
     tr.add_argument("--learning-rate", type=float, default=5e-4)
     tr.add_argument("--seed", type=int, default=7)
+    tr.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
+                    help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     tr.set_defaults(fn=cmd_train)
 
     eh = sub.add_parser("eval-head", help="top-k, ECE and shuffled-context control for a trained head")
     eh.add_argument("checkpoint")
     eh.add_argument("features")
+    eh.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
+                    help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     eh.set_defaults(fn=cmd_eval_head)
 
     v = sub.add_parser("serve", help="HTTP server with the model loaded once (POST /score, /v1/systemone)")
@@ -269,6 +294,10 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:N, or mps")
     v.add_argument("--host", default="127.0.0.1")
     v.add_argument("--port", type=int, default=8000)
+    v.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
+                   help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
+    v.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
+                   help="torch backend only: load the weights quantised via bitsandbytes")
     v.set_defaults(fn=cmd_serve)
 
     args = p.parse_args(argv)

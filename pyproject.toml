@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-torch = ["torch>=2.6", "accelerate>=1.0"]   # PyTorch backend on Apple silicon, comparisons and HF cross-checks
+torch = ["torch>=2.6", "accelerate>=1.0", "bitsandbytes>=0.50.2"]   # PyTorch backend on Apple silicon, comparisons and HF cross-checks
 finetune = ["chess>=1.10", "pyarrow>=15"]   # finetune/ chess next-move LoRA data prep
 doom = ["vizdoom>=1.2.4"]                         # demo/doom: play Doom in the terminal with the server choosing actions
 

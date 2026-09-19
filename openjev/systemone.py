@@ -17,7 +17,8 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
 
-from .scorer import OptionScorer
+# NOTE: no backend import here; the scorer is passed in by the caller so this
+# module works with both the MLX and the PyTorch scorer.
 
 Entry = Union[str, dict, list, None]
 MAX_CHOICE_OPTIONS = 255
@@ -156,7 +157,7 @@ def confidence(probs: list[float]) -> float:
 
 
 # ------------------------------------------------------------------ answer
-def system_one(scorer: OptionScorer, req: SystemOneRequest, model_name: str, norm: str = "sum") -> SystemOneResponse:
+def system_one(scorer: Any, req: SystemOneRequest, model_name: str, norm: str = "sum") -> SystemOneResponse:
     answers: dict[str, Any] = {}
     in_tok = out_tok = 0
     for qid, q in req.questions.items():
