@@ -130,6 +130,35 @@ sums, probs = engine.score(context, options, adapter=None)               # zero-
 `openjev lora-eval DIR DATA.jsonl --model ... [--chat]` scores a saved adapter on a labelled set, and
 `compare.py` (below) puts several adapters, the zero-shot model and Jev side by side on the same rows.
 
+### Released adapters (v0.2.0)
+
+The [v0.2.0 release](https://github.com/pakkio/openjev/releases/tag/v0.2.0) ships four int8 adapters
+for `google/gemma-4-E4B-it` (revision `ee0ef60`), each a ~37 MB zip with the weights, its
+`openjev_adapter.json` (task, prompt format, test results) and the Gemma notice. The base model is not
+included: it downloads from Hugging Face on first use, after accepting the Gemma license there. Top-1
+on the 300-row test split, all three engines on the same rows:
+
+| adapter | task | format | Jev | openjev zero-shot | openjev + adapter | size |
+|---|---|---|---|---|---|---|
+| `claims-keys` | claim -> which of 8 invented papers supports it, options as 'Surname et al. (year)' keys | chat | 0.117 | 0.140 | **1.000** | 37 MB |
+| `movies` | viewer request -> 1 of 10 made-up film titles | plain | 0.820 | 0.670 | **1.000** | 37 MB |
+| `genres` | film description -> 1 of 10 genres | chat | 0.813 | 0.810 | **0.900** | 37 MB |
+| `claims-refs` | claim -> which of 8 full references (2 same-topic) supports it | chat | 0.820 | 0.790 | **0.867** | 37 MB |
+
+```sh
+gh release download v0.2.0 -R pakkio/openjev -p '*.zip' -p SHA256SUMS && sha256sum -c SHA256SUMS
+for z in openjev-lora-*-int8.zip; do unzip -q "$z"; done
+openjev serve --backend torch --quantize 4bit --model google/gemma-4-E4B-it \
+    --lora claims-keys=./claims-keys --lora claims-refs=./claims-refs \
+    --lora genres=./genres --lora movies=./movies      # movies is a plain-format adapter: call it with "chat": false
+```
+
+They were trained on synthetic data only (the generators are in this repo), so they know the made-up
+papers and films of those sets, not real ones; they are examples of what a per-task adapter learns,
+and templates for training your own. The adapters are Gemma model derivatives and fall under the
+[Gemma Terms of Use](https://ai.google.dev/gemma/terms) and
+[Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy).
+
 ## TypeSafe System One contract
 
 `POST /v1/systemone` implements the request/response shape documented at
@@ -215,7 +244,7 @@ openjev is Gemma 4 E4B, 4-bit, on an RTX 4060 laptop GPU, zero-shot or with a Lo
 | news: headline -> 8 sections | **1.000** | 0.997 (chat) | 0.893 (plain format) |
 | claims_verify: abstract + claim -> supported / refuted / not enough info | **0.987** | 0.90 (chat, 100 rows) | not trained yet |
 | noul: does the review ask for a refund? | **0.993** | ~1.00 (chat, 100 rows) | 0.79 (plain format) |
-| claims_attrib: claim -> 1 of 8 full references | 0.820 | 0.79 (chat) | 1000 rows: validation 0.877, test pending |
+| claims_attrib: claim -> 1 of 8 full references | 0.820 | 0.79 (chat) | **0.867** (1000 rows) |
 | categorize: description -> 10 genres | 0.813 | 0.81 (chat) | **0.900** |
 | movies: request -> 1 of 10 made-up films | 0.820 | 0.67 (chat) | **1.000** |
 | claims_attrib_keys: claim -> 1 of 8 "Surname et al. (year)" keys | 0.117 | 0.14 | **1.000** |
