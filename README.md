@@ -77,6 +77,59 @@ curl -s localhost:8000/score -H 'content-type: application/json' -d '{
 
 The response has `best`, `best_index`, per-option `probability` / `logprob_sum` / `n_tokens`, and `timing`.
 
+### With LoRA adapters
+
+`--lora NAME=DIR` (torch backend, repeatable) loads one 4-bit base model plus every adapter under its
+name; float32 adapters and int8 ones from `openjev lora-quantize` both work. Training them:
+[LoRA fine-tuning](docs/lora.md).
+
+```sh
+openjev serve --backend torch --quantize 4bit --model google/gemma-4-E4B-it --port 8000 \
+    --lora claims=runs/lora-claims_attrib_keys-1500 \
+    --lora movies=runs/lora-movies_general_v2-int8
+```
+
+`POST /v1/lora/score` picks the adapter per request; `"adapter": null` is the base model zero-shot.
+`chat` must match the format the adapter was trained in: `true` (the default) puts the context and
+the option list in a user turn and scores each option as the reply, `false` scores `context + sep +
+option` as plain text (`sep` defaults to `"\nChoice: "`).
+
+```sh
+curl -s localhost:8000/v1/lora/score -H 'content-type: application/json' -d '{
+  "context": "Which study found that bone density shrank by 11% after a flu vaccine booster?",
+  "options": ["Mancini et al. (2024)", "Delacroix et al. (2022)", "Varga et al. (2016)", "Walsh et al. (2023)",
+              "Iyer et al. (2009)", "Rossi et al. (2017)", "Ferreira et al. (2018)", "Petrov et al. (2008)"],
+  "adapter": "claims"
+}'
+# -> {"best": "Mancini et al. (2024)", "best_index": 0, "adapter": "claims", "chat": true,
+#     "probabilities": [1.0, ...], "logprob_sums": [...], "timing": {...}}
+#    with "adapter": null the base model picks Delacroix et al. (2022), p=0.98
+
+curl -s localhost:8000/v1/lora/score -H 'content-type: application/json' -d '{
+  "context": "Tonight I want to watch something about two gunslingers settling a grudge. Pick one film.",
+  "options": ["Stone River Pact", "Velvet Orbit", "Iron Tide", "Midnight Market"],
+  "adapter": "movies", "chat": false
+}'
+```
+
+A server started with `--lora` also answers `/score` and `/v1/systemone` in the chat format: a
+question of type `choice`, `score` or `noul` uses the adapter loaded under that same name, and the
+zero-shot base model when there is none. So `--lora choice=DIR` makes every choice question of
+`/v1/systemone` go through that adapter.
+
+In Python, without a server:
+
+```python
+from openjev.lora_serve import LoraEngine
+
+engine = LoraEngine("google/gemma-4-E4B-it", {"claims": "runs/lora-claims_attrib_keys-1500"})
+sums, probs = engine.score(context, options, adapter="claims")           # chat format
+sums, probs = engine.score(context, options, adapter=None)               # zero-shot
+```
+
+`openjev lora-eval DIR DATA.jsonl --model ... [--chat]` scores a saved adapter on a labelled set, and
+`compare.py` (below) puts several adapters, the zero-shot model and Jev side by side on the same rows.
+
 ## TypeSafe System One contract
 
 `POST /v1/systemone` implements the request/response shape documented at
