@@ -160,11 +160,11 @@ openjev is Gemma 4 E4B, 4-bit, on an RTX 4060 laptop GPU, zero-shot or with a Lo
 | test set | Jev | openjev zero-shot | openjev + LoRA |
 |---|---|---|---|
 | news: headline -> 8 sections | **1.000** | 0.997 (chat) | 0.893 (plain format) |
-| claims_verify: abstract + claim -> supported / refuted / not enough info | **0.987** | 0.89 (chat, 100 rows) | training |
+| claims_verify: abstract + claim -> supported / refuted / not enough info | **0.987** | 0.90 (chat, 100 rows) | not trained yet |
 | noul: does the review ask for a refund? | **0.993** | ~1.00 (chat, 100 rows) | 0.79 (plain format) |
-| claims_attrib: claim -> 1 of 8 full references | 0.820 | 0.79 (chat) | training (validation 0.80 after 500 rows) |
+| claims_attrib: claim -> 1 of 8 full references | 0.820 | 0.79 (chat) | 1000 rows: validation 0.877, test pending |
 | categorize: description -> 10 genres | 0.813 | 0.81 (chat) | **0.900** |
-| movies: request -> 1 of 10 made-up films | 0.820 | 0.29 (plain) | **1.000** |
+| movies: request -> 1 of 10 made-up films | 0.820 | 0.67 (chat) | **1.000** |
 | claims_attrib_keys: claim -> 1 of 8 "Surname et al. (year)" keys | 0.117 | 0.14 | **1.000** |
 
 - Zero-shot, openjev in the chat format is close to Jev on the general tasks (news, noul,
@@ -174,15 +174,37 @@ openjev is Gemma 4 E4B, 4-bit, on an RTX 4060 laptop GPU, zero-shot or with a Lo
   be fine-tuned, so these stay near what it can infer from the text.
 - The sets were built to test exactly that, so they favour fine-tuning by construction; on a real
   task the gap is as large as the private knowledge it needs.
-- Speed and cost: Jev's median latency was 0.27 s per question over the network and the whole run
-  (2,430 requests, ~850k input tokens) cost about $0.04. openjev on the laptop GPU takes ~1-2 s per
-  8-option question, costs nothing per call, keeps the data local, and needs 0.5-3 h of training
-  per task.
+- Speed and cost: per question the two are close, Jev 0.27 s median over the network and openjev
+  0.2-0.7 s on the laptop GPU once the model is loaded. Jev serves many requests in parallel, so it
+  wins on volume (100 films, two questions each: 3.5 s vs 73 s one after another). The whole Jev run
+  (2,430 requests, ~850k input tokens) cost about $0.04; openjev costs nothing per call, keeps the
+  data local, and needs 0.5-3 h of training per task.
 
-Caveats: the openjev numbers come from the training runs, so a few are 100-row samples and some
-adapters used the plain rather than the chat format; the two systems also see the options
-differently (inside a chat turn vs as `choice` criteria). A like-for-like rerun of openjev on
-exactly these rows is pending.
+Caveats: movies, categorize, claims_attrib_keys and claims_attrib were rerun with `compare.py` on
+exactly Jev's rows (the int8 adapters score the same as the float32 ones); news, noul and
+claims_verify come from the training runs, some on 100-row samples, and the news and noul adapters
+use the plain rather than the chat format. The two systems also see the options differently
+(inside a chat turn vs as `choice` criteria).
+
+### openjev vs Jev on real data
+
+Both engines zero-shot, 2026-09-26:
+
+| task | Jev | openjev (Gemma 4 E4B) |
+|---|---|---|
+| 287 BBC News/Sport stories -> 8 sections, scored against the BBC's own section feeds (`bbc_catalogue.py`) | **0.840** | 0.829 |
+| 100 IMDb films, `score` question on the IMDb rating band: Spearman vs the live rating (`imdb_rate.py`) | **0.952** | 0.488 |
+| same films, `noul` "rated 7.0 or higher?": accuracy | **0.90** | 0.64 |
+
+- On news the two agree on 91% of the stories; most "misses" of both are BBC section choices that
+  do not map onto the 8 sections (floods under Science & Environment, AI companies under Business).
+  The synthetic-news LoRA adapter drops openjev to 0.791 here: it learned a narrow "science".
+- On films, the question needs world knowledge about how each film was received, where the 4B
+  model is far behind. Worded as "Do IMDb users rate this film...", Gemma answers "no, I have no
+  access" for every film (Spearman 0.009); the numbers above use "Using what you know about this
+  film..." for both engines (Jev scores the same either way).
+- IMDb data comes from IMDb's non-commercial datasets and BBC stories from its RSS feeds; neither
+  is committed (see `.gitignore`).
 
 ## Training a head (per-task, on frozen Gemma features)
 
@@ -255,6 +277,18 @@ openjev score --backend torch --norm sum --model Qwen/Qwen2.5-1.5B-Instruct \
 
 openjev check  --backend torch --model Qwen/Qwen2.5-1.5B-Instruct   # cached vs naive
 openjev serve  --backend torch --model google/gemma-3-4b-it --quantize 4bit
+```
+
+Gemma 4 E-series models (`google/gemma-4-E4B-it`) work on an 8 GB card with `--quantize 4bit`.
+They carry a ~2.8B-parameter per-layer embedding table that bitsandbytes cannot quantise; `score`,
+`eval`, `check`, `features` and `serve` keep it (and the unused vision/audio towers) on the CPU and
+move only the looked-up rows, as LoRA training does, so the model takes ~3.2 GB of GPU memory. Their
+sliding-window layers keep the last 512 tokens; the cached path copies the model's own cache, so
+longer prompts score correctly.
+
+```sh
+openjev eval data/synthetic/claims_verify/test.jsonl --backend torch --quantize 4bit \
+    --model google/gemma-4-E4B-it --chat --norm sum     # ~0.2 s per row on an RTX 4060 laptop GPU
 ```
 
 ### Quantisation (`--quantize`)
