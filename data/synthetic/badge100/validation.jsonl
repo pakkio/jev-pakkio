@@ -1,0 +1,15 @@
+{"context": "Choose the exact badge crimson ibis. Notes: north east north east south north east west. Badge: crimson ibis.", "options": ["crimson ibis", "amber badger", "bronze gecko", "gold ibis", "violet dolphin"], "label": 0}
+{"context": "Choose the exact badge silver ibis. Notes: west west west north east east south east. Badge: silver ibis.", "options": ["amber dolphin", "silver ibis", "amber ibis"], "label": 1}
+{"context": "Choose the exact badge violet falcon. Notes: north west west north south west east north south east. Badge: violet falcon.", "options": ["amber crane", "amber ibis", "indigo ibis", "amber heron", "violet falcon", "indigo jaguar"], "label": 4}
+{"context": "Choose the exact badge indigo raven. Notes: south west west north east east. Badge: indigo raven.", "options": ["silver otter", "indigo raven", "azure raven"], "label": 1}
+{"context": "Choose the exact badge coral otter. Notes: south north east north south south north south south south. Badge: coral otter.", "options": ["bronze jaguar", "coral otter", "bronze badger", "indigo jaguar"], "label": 1}
+{"context": "Choose the exact badge crimson heron. Notes: south north north south west south west. Badge: crimson heron.", "options": ["bronze badger", "crimson heron", "indigo raven"], "label": 1}
+{"context": "Choose the exact badge violet gecko. Notes: south south south west west north. Badge: violet gecko.", "options": ["indigo otter", "violet gecko", "coral ibis", "green badger", "indigo dolphin", "gold falcon", "amber otter"], "label": 1}
+{"context": "Choose the exact badge amber crane. Notes: north east east west east west east east. Badge: amber crane.", "options": ["amber crane", "gold jaguar", "bronze dolphin", "coral badger"], "label": 0}
+{"context": "Choose the exact badge violet jaguar. Notes: north north east west south east south south north east. Badge: violet jaguar.", "options": ["violet jaguar", "crimson falcon"], "label": 0}
+{"context": "Choose the exact badge azure heron. Notes: south south west west east east east south. Badge: azure heron.", "options": ["gold otter", "green raven", "azure heron"], "label": 2}
+{"context": "Choose the exact badge green dolphin. Notes: north north east south south west west north north. Badge: green dolphin.", "options": ["green jaguar", "silver crane", "green dolphin"], "label": 2}
+{"context": "Choose the exact badge silver jaguar. Notes: east west north west east south east. Badge: silver jaguar.", "options": ["bronze crane", "silver jaguar"], "label": 1}
+{"context": "Choose the exact badge bronze raven. Notes: south east north west south east. Badge: bronze raven.", "options": ["bronze raven", "indigo otter", "indigo falcon", "coral heron", "amber badger", "crimson badger"], "label": 0}
+{"context": "Choose the exact badge amber dolphin. Notes: east south west south south west. Badge: amber dolphin.", "options": ["bronze badger", "amber dolphin", "violet heron"], "label": 1}
+{"context": "Choose the exact badge gold ibis. Notes: east east north north south west. Badge: gold ibis.", "options": ["coral jaguar", "gold ibis", "violet dolphin"], "label": 1}

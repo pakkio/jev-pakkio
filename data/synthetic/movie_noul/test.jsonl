@@ -1,0 +1,20 @@
+{"context": "Viewer review: \"this was a waste, refund please.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"demanding a refund for this film.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"what a great evening.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"will recommend to friends.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"what a great evening.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"what a great evening.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"demanding a refund for this film.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"will recommend to friends.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"demanding a refund for this film.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want my money back.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"demanding a refund for this film.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"this was a waste, refund please.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"what a great evening.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"loved every minute.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"demanding a refund for this film.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want my money back.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want my money back.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"loved every minute.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"demanding a refund for this film.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want my money back.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}

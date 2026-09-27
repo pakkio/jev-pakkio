@@ -53,15 +53,14 @@ def _get_backend_modules(backend: str):
 def _scorer(args: argparse.Namespace):
     t = time.perf_counter()
     scorer_mod, _, _, _ = _get_backend_modules(args.backend)
-    model_path = args.model or scorer_mod.DEFAULT_MODEL
     kwargs = {}
     quantize = getattr(args, "quantize", "none")
     if args.backend == "torch":
         kwargs["quantize"] = quantize
     elif quantize != "none":
         raise SystemExit("--quantize requires --backend torch")
-    s = scorer_mod.OptionScorer(model_path, batch_size=args.batch_size, chat=args.chat, sep=args.sep, adapter_path=args.adapter, device=args.device, **kwargs)
-    print(f"loaded {model_path} in {time.perf_counter() - t:.1f}s", file=sys.stderr)
+    s = scorer_mod.OptionScorer(args.model, batch_size=args.batch_size, chat=args.chat, sep=args.sep, **kwargs)
+    print(f"loaded {args.model} in {time.perf_counter() - t:.1f}s", file=sys.stderr)
     return s
 
 
@@ -106,6 +105,7 @@ def cmd_eval(args: argparse.Namespace) -> None:
     fixed = _read_options(args.fixed_options) if args.fixed_options else None
     top1 = top3 = labelled = 0
     lat: list[float] = []
+    certainties: list[float] = []
     for i, row in enumerate(rows):
         options = row.get("options") or fixed
         if not options:
@@ -114,19 +114,37 @@ def cmd_eval(args: argparse.Namespace) -> None:
         lat.append(scorer.last_timing["total_s"])
         order = sorted(range(len(res)), key=lambda j: -res[j].score)
         label = row.get("label")
-        if label is not None:
+        labels = row.get("labels") or ([label] if label is not None else None)
+
+        # Certainty index: probability margin between top-2
+        probs = [r.probability for r in res]
+        sorted_probs = sorted(probs, reverse=True)
+        if len(sorted_probs) >= 2:
+            certainty = sorted_probs[0] - sorted_probs[1]
+        else:
+            certainty = 1.0
+        certainties.append(certainty)
+
+        if labels is not None:
             labelled += 1
-            top1 += order[0] == label
-            top3 += label in order[:3]
+            if len(labels) == 1:
+                top1 += order[0] in labels
+                top3 += any(l in order[:3] for l in labels)
+            else:
+                # Multi-label: top-1 must be one of the valid labels
+                top1 += order[0] in labels
+                top3 += sum(1 for l in labels if l in order[:3]) / len(labels)
         if args.verbose or label is None:
-            print(json.dumps({"i": i, "label": label, "pred": order[0], "pred_option": options[order[0]],
-                              "probs": [round(r.probability, 4) for r in res]}))
+            print(json.dumps({"i": i, "label": labels, "pred": order[0], "pred_option": options[order[0]],
+                              "probs": [round(p, 4) for p in probs], "certainty": round(certainty, 4)}))
     n = len(rows)
     print(json.dumps({
         "examples": n,
         "labelled": labelled,
         "top1": top1 / labelled if labelled else None,
         "top3": top3 / labelled if labelled else None,
+        "median_certainty": statistics.median(certainties) if certainties else None,
+        "low_certainty_count": sum(1 for c in certainties if c < 0.3),
         "norm": args.norm,
         "median_latency_s": statistics.median(lat),
         "mean_latency_s": statistics.fmean(lat),
@@ -200,7 +218,15 @@ def cmd_check(args: argparse.Namespace) -> None:
 def cmd_serve(args: argparse.Namespace) -> None:
     from .server import serve
 
-    serve(args.host, args.port, args.model, args.batch_size, args.backend, getattr(args, "device", "auto"), getattr(args, "quantize", "none"))
+    heads = {t: p for t, p in (("choice", args.head_choice), ("score", args.head_score),
+                               ("noul", args.head_noul)) if p}
+    lora = {}
+    for spec in args.lora:
+        name, sep, path = spec.partition("=")
+        if not sep or not name or not path:
+            raise SystemExit(f"--lora expects NAME=PATH, got {spec!r}")
+        lora[name] = path
+    serve(args.host, args.port, args.model, args.batch_size, args.backend, args.quantize, heads or None, lora or None)
 
 
 def cmd_features(args: argparse.Namespace) -> None:
@@ -224,6 +250,31 @@ def cmd_eval_head(args: argparse.Namespace) -> None:
     print(json.dumps({"model": train_mod.evaluate(head_obj, fs),
                       "shuffled_context": train_mod.evaluate(head_obj, fs, shuffle_context=True),
                       "checkpoint": args.checkpoint, "rank": cfg["rank"]}, indent=2))
+
+
+def cmd_lora(args: argparse.Namespace) -> None:
+    from . import lora_torch
+
+    r = lora_torch.train(args.model, args.train, args.validation, args.out, test_path=args.test, sep=args.sep,
+                         quantize=args.quantize, rank=args.rank, alpha=args.alpha, epochs=args.epochs,
+                         lr=args.learning_rate, accum=args.accum, limit=args.limit,
+                         eval_every=args.eval_every, seed=args.seed,
+                         resume=args.resume, max_rows=args.max_rows, chat=args.chat)
+    print(json.dumps({k: r[k] for k in ("best_val_top1", "zero_shot", "test", "test_shuffled_context") if k in r}))
+
+
+def cmd_lora_eval(args: argparse.Namespace) -> None:
+    from . import lora_torch
+
+    print(json.dumps(lora_torch.eval_adapter(args.model, args.adapter, args.data, sep=args.sep,
+                                             quantize=args.quantize, zero_shot=not args.no_zero_shot,
+                                             chat=args.chat), indent=2))
+
+
+def cmd_lora_quantize(args: argparse.Namespace) -> None:
+    from . import lora_torch
+
+    print(json.dumps(lora_torch.quantize_int8(args.adapter, args.out or args.adapter.rstrip("/") + "-int8")))
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -288,6 +339,44 @@ def main(argv: list[str] | None = None) -> None:
                     help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     eh.set_defaults(fn=cmd_eval_head)
 
+    lo = sub.add_parser("lora", help="LoRA-tune the scorer (torch + peft, QLoRA) on JSONL rows")
+    lo.add_argument("train")
+    lo.add_argument("--validation", required=True)
+    lo.add_argument("--test", default=None, help="also report zero-shot vs tuned on this split")
+    lo.add_argument("--out", default="runs/lora")
+    lo.add_argument("--model", default=DEFAULT_MODEL)
+    lo.add_argument("--sep", default="\nChoice: ")
+    lo.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="4bit")
+    lo.add_argument("--rank", type=int, default=16)
+    lo.add_argument("--alpha", type=int, default=32)
+    lo.add_argument("--epochs", type=int, default=1)
+    lo.add_argument("--learning-rate", type=float, default=2e-4)
+    lo.add_argument("--accum", type=int, default=8, help="rows per optimiser step")
+    lo.add_argument("--limit", type=int, default=0, help="use only the first N training rows")
+    lo.add_argument("--eval-every", type=int, default=0, help="validate every N rows (default: once per epoch)")
+    lo.add_argument("--seed", type=int, default=7)
+    lo.add_argument("--resume", default=None, help="continue training from this saved adapter dir")
+    lo.add_argument("--chat", action="store_true",
+                    help="chat format: context + option list as a user turn (much stronger on instruction-tuned models)")
+    lo.add_argument("--max-rows", type=int, default=0, help="stop after this many training rows")
+    lo.set_defaults(fn=cmd_lora)
+
+    le = sub.add_parser("lora-eval", help="top-k, ECE and shuffled-context control for a LoRA adapter vs zero-shot")
+    le.add_argument("adapter")
+    le.add_argument("data")
+    le.add_argument("--model", default=DEFAULT_MODEL)
+    le.add_argument("--sep", default="\nChoice: ")
+    le.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="4bit")
+    le.add_argument("--chat", action="store_true",
+                    help="chat format: context + option list as a user turn (much stronger on instruction-tuned models)")
+    le.add_argument("--no-zero-shot", action="store_true", help="skip the adapter-disabled baseline")
+    le.set_defaults(fn=cmd_lora_eval)
+
+    lq = sub.add_parser("lora-quantize", help="store a LoRA adapter as int8 + per-row scales (~4x smaller)")
+    lq.add_argument("adapter")
+    lq.add_argument("--out", default=None, help="output dir (default: ADAPTER-int8)")
+    lq.set_defaults(fn=cmd_lora_quantize)
+
     v = sub.add_parser("serve", help="HTTP server with the model loaded once (POST /score, /v1/systemone)")
     v.add_argument("--model", default=None)
     v.add_argument("--batch-size", type=int, default=8)
@@ -298,7 +387,13 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
                    help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     v.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
-                   help="torch backend only: load the weights quantised via bitsandbytes")
+                     help="torch backend only: load the weights quantised via bitsandbytes")
+    v.add_argument("--head-choice", default=None, help="Route-A choice head checkpoint for /score and choice questions")
+    v.add_argument("--head-score", default=None, help="Route-A score head checkpoint for score questions")
+    v.add_argument("--head-noul", default=None, help="Route-A noul head checkpoint for noul questions")
+    v.add_argument("--lora", action="append", default=[], metavar="NAME=PATH",
+                   help="LoRA mode (torch): load an adapter under NAME; repeatable. NAME choice/score/noul "
+                        "also serves that /v1/systemone question type")
     v.set_defaults(fn=cmd_serve)
 
     args = p.parse_args(argv)

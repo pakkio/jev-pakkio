@@ -16,17 +16,7 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, DynamicCache
 
 
-def _auto_default_model() -> str:
-    try:
-        if torch.cuda.is_available():
-            vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-            if vram_gb <= 4.5:
-                return "google/gemma-2-2b-it"
-    except Exception:
-        pass
-    return "google/gemma-3-4b-it"
-
-DEFAULT_MODEL = _auto_default_model()
+DEFAULT_MODEL = "google/gemma-3-4b-it"
 NORMS = ("mean", "sum", "pmi")
 QUANTIZATIONS = ("none", "8bit", "4bit")
 

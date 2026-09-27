@@ -13,9 +13,12 @@ API    ?= score
 DATA_DIR ?= data/synthetic
 FEATS  ?= runs/feats
 HEAD   ?= runs/head.safetensors
+LORA_DATA ?= data/synthetic/movies_hard2k
+LORA_MODEL ?= google/gemma-4-E4B-it
+LORA   ?= runs/lora
 SEP    ?= \nChoice: 
 
-.PHONY: help setup venv model serve health request doom systemone score check bench eval features train eval-head clean
+.PHONY: help setup venv model serve health request doom systemone score check bench eval features train eval-head lora clean
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -68,6 +71,11 @@ train: ## train the attention head on $(FEATS)/train.npz, validate on $(FEATS)/v
 
 eval-head: ## top-k, ECE and shuffled-context control of $(HEAD) on $(FEATS)/test.npz
 	$(BIN)/openjev eval-head $(HEAD) $(FEATS)/test.npz
+
+lora: ## QLoRA-tune $(LORA_MODEL) as a scorer on $(LORA_DATA)/{train,validation,test}.jsonl -> $(LORA)/ (torch + CUDA)
+	PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $(BIN)/openjev lora $(LORA_DATA)/train.jsonl \
+	  --validation $(LORA_DATA)/validation.jsonl --test $(LORA_DATA)/test.jsonl \
+	  --model $(LORA_MODEL) --epochs 2 --eval-every 500 --out $(LORA)
 
 clean: ## remove caches and run artefacts (keeps the venv and model)
 	rm -rf runs __pycache__ openjev/__pycache__

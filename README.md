@@ -1,6 +1,7 @@
 # openjev
 
-One-pass option scoring with a local Gemma 3 4B: MLX on Apple silicon, or PyTorch on Windows and Linux (CPU or GPU).
+One-pass option scoring with a local Gemma 3 4B, on Apple silicon via MLX or on
+NVIDIA/CPU via PyTorch (`--backend torch`).
 Design notes: [docs/design/one-pass-option-scoring.md](docs/design/one-pass-option-scoring.md);
 per-task training: [docs/design/per-task-finetuning-with-gemma.md](docs/design/per-task-finetuning-with-gemma.md).
 
@@ -120,7 +121,9 @@ finds the metadata, tries to import it, and dies -- taking the torch backend dow
 
 ## Server
 
-Loads the model once. The measured Apple silicon MLX path answers scoring requests in about 90 ms each; PyTorch latency depends on your CPU/GPU. Use `uv run openjev serve` on any supported platform, or the Make shortcut below on macOS. (The MLX path has no container story, because Linux containers cannot reach the Apple GPU.)
+Loads the model once and answers scoring requests in about 90 ms each. Runs natively on macOS with
+Metal, or on Linux/NVIDIA with `--backend torch` (see below); the MLX path has no container story,
+because Linux containers cannot reach the Apple GPU.
 
 ```sh
 make serve                                     # = .venv/bin/openjev serve --port 8000

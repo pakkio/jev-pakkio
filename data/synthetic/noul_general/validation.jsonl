@@ -1,0 +1,300 @@
+{"context": "Customer message about Cloud Engine: \"Send me a refund today, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Neon Harbour: \"The screening started forty minutes late, reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Quiet Ledger: \"The performances were moving.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cipher of Lanterns: \"It felt like a rough draft, I don't regret paying.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"A real crowd-pleaser, the price was fair.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse, reimburse me for this rental.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"It was boring from start to finish.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"The seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Cipher of Lanterns: \"Cancel the charge and refund me, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The subtitles were out of sync.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The screening started forty minutes late.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, cancel the charge and refund me.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"A real crowd-pleaser, not looking for compensation.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about The Granite Meadow: \"The seats were broken and the film was worse, send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"The price was fair, it was boring from start to finish.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Cipher of Lanterns: \"It was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"A perfect date movie.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cipher of Lanterns: \"Cancel the charge and refund me, the seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"The seats were broken and the film was worse, the price was fair.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Cloud Engine: \"It felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"I'm keeping my ticket as a souvenir, it was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"The subtitles were out of sync, I'm keeping my ticket as a souvenir.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Cloud Engine: \"The performances were moving.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"It was boring from start to finish, cancel the charge and refund me.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Stone River Pact: \"The seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Neon Harbour: \"The seats were broken and the film was worse, cancel the charge and refund me.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The performances were moving.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Not looking for compensation, it was pure joy.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse, I want compensation for the ticket.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Solaris Drift: \"It was pure joy, I don't regret paying.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Neon Harbour: \"It was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Iron Tide: \"The seats were broken and the film was worse, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cipher of Lanterns: \"Send me a refund today, it was boring from start to finish.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"Reimburse me for this rental, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Quiet Ledger: \"The seats were broken and the film was worse, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Neon Harbour: \"The seats were broken and the film was worse, reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"Reimburse me for this rental, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Quiet Ledger: \"The seats were broken and the film was worse, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"The screening started forty minutes late, I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"Cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"I'm keeping my ticket as a souvenir, it was boring from start to finish.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"The subtitles were out of sync, cancel the charge and refund me.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I'm keeping my ticket as a souvenir, it was boring from start to finish.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Velvet Orbit: \"Cancel the charge and refund me, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Neon Harbour: \"I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"It felt like a rough draft.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I'm keeping my ticket as a souvenir, a perfect date movie.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"The screening started forty minutes late, I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"I want compensation for the ticket, the screening started forty minutes late.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Solaris Drift: \"I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"It was boring from start to finish, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"The screening started forty minutes late, cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Cancel the charge and refund me, the subtitles were out of sync.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"A real crowd-pleaser.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The subtitles were out of sync, reimburse me for this rental.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"The performances were moving.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The screening started forty minutes late.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Send me a refund today, it was boring from start to finish.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Solaris Drift: \"It was pure joy, the price was fair.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for The Granite Meadow: \"Reimburse me for this rental, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"Reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"Reimburse me for this rental, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"Reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cloud Engine: \"I don't regret paying, it was boring from start to finish.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Stone River Pact: \"The screening started forty minutes late, I'm keeping my ticket as a souvenir.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I want compensation for the ticket, the seats were broken and the film was worse.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Iron Tide: \"The performances were moving, the price was fair.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"It was boring from start to finish.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"A real crowd-pleaser, not looking for compensation.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Stone River Pact: \"Not looking for compensation, a real crowd-pleaser.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"Send me a refund today, the subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Quiet Ledger: \"A real crowd-pleaser, I'm keeping my ticket as a souvenir.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Send me a refund today.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about The Granite Meadow: \"Reimburse me for this rental, the screening started forty minutes late.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"Send me a refund today, the screening started forty minutes late.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"The performances were moving.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Stone River Pact: \"The price was fair, it was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"The screening started forty minutes late, send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"It exceeded my expectations.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Quiet Ledger: \"Not looking for compensation, a real crowd-pleaser.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I want compensation for the ticket, it was boring from start to finish.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Quiet Ledger: \"The seats were broken and the film was worse, send me a refund today.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Iron Tide: \"It was boring from start to finish, cancel the charge and refund me.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The seats were broken and the film was worse.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Quiet Ledger: \"The price was fair, a perfect date movie.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"The subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Cancel the charge and refund me, it felt like a rough draft.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Iron Tide: \"The seats were broken and the film was worse, I don't regret paying.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Solaris Drift: \"The seats were broken and the film was worse, cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"The seats were broken and the film was worse, cancel the charge and refund me.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Midnight Market: \"It was boring from start to finish, send me a refund today.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Neon Harbour: \"A real crowd-pleaser.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Solaris Drift: \"The seats were broken and the film was worse, cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Solaris Drift: \"I want compensation for the ticket, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I'm keeping my ticket as a souvenir, the subtitles were out of sync.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"The subtitles were out of sync, send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"The price was fair, it was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"I want compensation for the ticket, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cipher of Lanterns: \"Cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"The subtitles were out of sync, send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"It exceeded my expectations.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse, I want compensation for the ticket.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Solaris Drift: \"Reimburse me for this rental, it felt like a rough draft.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Stone River Pact: \"The subtitles were out of sync, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"A real crowd-pleaser.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"The seats were broken and the film was worse, I'm keeping my ticket as a souvenir.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cloud Engine: \"It felt like a rough draft, I don't regret paying.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cloud Engine: \"I want compensation for the ticket, it was boring from start to finish.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Neon Harbour: \"I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"The screening started forty minutes late, I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"The screening started forty minutes late, send me a refund today.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"It exceeded my expectations, not looking for compensation.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Stone River Pact: \"It felt like a rough draft, reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Stone River Pact: \"The screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I want compensation for the ticket, it was boring from start to finish.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"A perfect date movie.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Velvet Orbit: \"A real crowd-pleaser, the price was fair.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cipher of Lanterns: \"I'm keeping my ticket as a souvenir, it felt like a rough draft.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Reimburse me for this rental.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"Send me a refund today, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"I'm keeping my ticket as a souvenir, it was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"A real crowd-pleaser.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Cancel the charge and refund me.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"Cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"Reimburse me for this rental, the subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want compensation for the ticket, it was boring from start to finish.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"It exceeded my expectations.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I don't regret paying, a perfect date movie.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Solaris Drift: \"It felt like a rough draft.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, reimburse me for this rental.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Quiet Ledger: \"A perfect date movie.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about The Granite Meadow: \"Send me a refund today, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"The seats were broken and the film was worse, reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Stone River Pact: \"The subtitles were out of sync, I'm keeping my ticket as a souvenir.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Iron Tide: \"Send me a refund today, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"A real crowd-pleaser, the price was fair.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It exceeded my expectations.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Quiet Ledger: \"It felt like a rough draft, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"A perfect date movie, I'm keeping my ticket as a souvenir.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"Cancel the charge and refund me, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Cancel the charge and refund me, it felt like a rough draft.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cipher of Lanterns: \"I don't regret paying, the screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse, send me a refund today.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"A real crowd-pleaser.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"I want compensation for the ticket, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"It felt like a rough draft, I want compensation for the ticket.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Cancel the charge and refund me.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"Reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Midnight Market: \"The screening started forty minutes late, the price was fair.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Quiet Ledger: \"I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Reimburse me for this rental, the subtitles were out of sync.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Velvet Orbit: \"The performances were moving, I'm keeping my ticket as a souvenir.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about The Granite Meadow: \"Cancel the charge and refund me, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cipher of Lanterns: \"It was pure joy.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Send me a refund today.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"Cancel the charge and refund me, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Send me a refund today.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Cancel the charge and refund me.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"Reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I don't regret paying, it was boring from start to finish.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cloud Engine: \"I want compensation for the ticket, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Solaris Drift: \"I want compensation for the ticket, the screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about The Granite Meadow: \"A perfect date movie.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Midnight Market: \"Send me a refund today, the screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"Send me a refund today, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"I'm keeping my ticket as a souvenir, it exceeded my expectations.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It felt like a rough draft, send me a refund today.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Iron Tide: \"The screening started forty minutes late.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I'm keeping my ticket as a souvenir, the screening started forty minutes late.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The performances were moving.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, cancel the charge and refund me.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"A perfect date movie.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"It was pure joy, I'm keeping my ticket as a souvenir.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Velvet Orbit: \"The price was fair, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Stone River Pact: \"I want compensation for the ticket, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Quiet Ledger: \"The subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Velvet Orbit: \"Send me a refund today, the screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The price was fair, the screening started forty minutes late.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Velvet Orbit: \"It felt like a rough draft, the price was fair.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Velvet Orbit: \"I want compensation for the ticket, the screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The subtitles were out of sync, reimburse me for this rental.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Velvet Orbit: \"A perfect date movie.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"The price was fair, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The screening started forty minutes late, reimburse me for this rental.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Midnight Market: \"I want compensation for the ticket, the seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want compensation for the ticket, it felt like a rough draft.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Quiet Ledger: \"It exceeded my expectations.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Solaris Drift: \"The screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Stone River Pact: \"Reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"The price was fair, the subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Quiet Ledger: \"Reimburse me for this rental, the subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Send me a refund today.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cloud Engine: \"The seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cipher of Lanterns: \"I don't regret paying, a real crowd-pleaser.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The screening started forty minutes late, cancel the charge and refund me.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Velvet Orbit: \"The price was fair, it felt like a rough draft.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Neon Harbour: \"The screening started forty minutes late, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cipher of Lanterns: \"Cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"The seats were broken and the film was worse, cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"It felt like a rough draft, I want compensation for the ticket.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Velvet Orbit: \"The price was fair, it was pure joy.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I don't regret paying, the performances were moving.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for The Granite Meadow: \"A real crowd-pleaser, the price was fair.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Cipher of Lanterns: \"The subtitles were out of sync, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Not looking for compensation, the screening started forty minutes late.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Iron Tide: \"The seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for The Granite Meadow: \"It exceeded my expectations.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for The Granite Meadow: \"The subtitles were out of sync, send me a refund today.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"Not looking for compensation, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Send me a refund today, the seats were broken and the film was worse.\" Film: Neon Harbour. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Velvet Orbit: \"Cancel the charge and refund me, it was boring from start to finish.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"A perfect date movie.\" Film: Quiet Ledger. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"A real crowd-pleaser.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Stone River Pact: \"I want compensation for the ticket, the seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Midnight Market: \"The screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Stone River Pact: \"Send me a refund today, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"It felt like a rough draft, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Stone River Pact: \"Cancel the charge and refund me, the screening started forty minutes late.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"Send me a refund today, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Stone River Pact: \"The subtitles were out of sync, not looking for compensation.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, I'm keeping my ticket as a souvenir.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Neon Harbour: \"The subtitles were out of sync, I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want compensation for the ticket.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"The screening started forty minutes late, the price was fair.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"The price was fair, the performances were moving.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Cloud Engine: \"The performances were moving, the price was fair.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"I want compensation for the ticket, it felt like a rough draft.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about The Granite Meadow: \"The subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Quiet Ledger: \"It felt like a rough draft, the price was fair.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The seats were broken and the film was worse.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"The seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The performances were moving.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Neon Harbour: \"It was boring from start to finish.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Midnight Market: \"It felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Cancel the charge and refund me, the subtitles were out of sync.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Solaris Drift: \"A perfect date movie.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Midnight Market: \"I want compensation for the ticket, the subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Not looking for compensation, it felt like a rough draft.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, I want compensation for the ticket.\" Film: Velvet Orbit. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cloud Engine: \"It was pure joy.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Stone River Pact: \"A real crowd-pleaser, not looking for compensation.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Reimburse me for this rental, the seats were broken and the film was worse.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The subtitles were out of sync, I'm keeping my ticket as a souvenir.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Cloud Engine: \"Cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I don't regret paying, a real crowd-pleaser.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It felt like a rough draft, send me a refund today.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Iron Tide: \"The subtitles were out of sync, cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Reimburse me for this rental, it was boring from start to finish.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Stone River Pact: \"Send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"It was pure joy.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"A perfect date movie.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"The screening started forty minutes late, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Solaris Drift: \"I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Velvet Orbit: \"It was boring from start to finish, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"The subtitles were out of sync, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"Cancel the charge and refund me, the subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want compensation for the ticket, the subtitles were out of sync.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Stone River Pact: \"I'm keeping my ticket as a souvenir, a perfect date movie.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for The Granite Meadow: \"The seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"It exceeded my expectations.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"The screening started forty minutes late.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Send me a refund today, the screening started forty minutes late.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Reimburse me for this rental.\" Film: Stone River Pact. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Neon Harbour: \"The subtitles were out of sync, I'm keeping my ticket as a souvenir.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, send me a refund today.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Stone River Pact: \"The subtitles were out of sync.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Velvet Orbit: \"Send me a refund today, it felt like a rough draft.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Midnight Market: \"The seats were broken and the film was worse, send me a refund today.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"It was boring from start to finish, I want compensation for the ticket.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cloud Engine: \"I don't regret paying, a real crowd-pleaser.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Iron Tide: \"The subtitles were out of sync, send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cipher of Lanterns: \"The seats were broken and the film was worse, reimburse me for this rental.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"I want compensation for the ticket, the subtitles were out of sync.\" Film: Midnight Market. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"Reimburse me for this rental.\" Film: Cipher of Lanterns. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"Reimburse me for this rental, it felt like a rough draft.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Velvet Orbit: \"A perfect date movie.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Midnight Market: \"I want compensation for the ticket, the screening started forty minutes late.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"I'm keeping my ticket as a souvenir, a real crowd-pleaser.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Feedback received for Stone River Pact: \"The subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The price was fair, the performances were moving.\" Film: Solaris Drift. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about Solaris Drift: \"Cancel the charge and refund me, it was boring from start to finish.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Neon Harbour: \"I want compensation for the ticket.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for The Granite Meadow: \"Cancel the charge and refund me.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Midnight Market: \"Reimburse me for this rental, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"Not looking for compensation, it exceeded my expectations.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Send me a refund today, the subtitles were out of sync.\" Film: Iron Tide. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cloud Engine: \"Send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Cloud Engine: \"Send me a refund today, the seats were broken and the film was worse.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Solaris Drift: \"The subtitles were out of sync.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"Cancel the charge and refund me, the subtitles were out of sync.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Cipher of Lanterns: \"It felt like a rough draft, reimburse me for this rental.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Feedback received for Midnight Market: \"The seats were broken and the film was worse, I want compensation for the ticket.\" Does the writer want their money back?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Quiet Ledger: \"I don't regret paying, the seats were broken and the film was worse.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"The price was fair, it exceeded my expectations.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Viewer review: \"It was boring from start to finish, cancel the charge and refund me.\" Film: Cloud Engine. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Customer message about Iron Tide: \"I don't regret paying, the performances were moving.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 1}
+{"context": "Customer message about The Granite Meadow: \"The screening started forty minutes late, send me a refund today.\" Is this customer requesting a refund?", "options": ["yes", "no"], "label": 0}
+{"context": "Viewer review: \"The screening started forty minutes late, reimburse me for this rental.\" Film: The Granite Meadow. Does the viewer ask for a refund?", "options": ["yes", "no"], "label": 0}
