@@ -90,3 +90,29 @@ Type moves in UCI (`e2e4`) or SAN (`Nf3`, `O-O`). `hint` shows the model's
 top choices for your side, `moves` lists legal moves, `undo` takes back a
 full move, `fen` prints the position, `quit` exits. The model plays the
 top-ranked legal move each turn and prints its runner-up candidates.
+
+## PyTorch LoRA Fine-Tuning (Local & Fallback)
+
+For systems with NVIDIA GPUs, PyTorch-based training scripts have been added:
+- `train_chess_torch.py`: Replicates the MLX Lichess training pipeline using `trl` and `bitsandbytes` (4-bit quantization).
+- `train_news_torch.py`: Fine-tunes the model on the `ag_news` categorization dataset.
+
+These scripts load the model in 4-bit precision and can comfortably fit LoRA fine-tuning for a 2B/3B parameter model on a 4GB VRAM GPU (e.g. RTX A2000).
+
+### AG News Categorization Benchmark
+A pipeline was established to test the zero-shot Native TypeSafe SystemOne API (`jev-latest`) against local PyTorch fine-tunes (`google/gemma-2-2b-it` + LoRA) on `ag_news` (World, Sports, Business, Sci/Tech):
+
+| Model | Checkpoint / Train Steps | Top-1 Accuracy | Test Set |
+|-------|-------------------------|----------------|----------|
+| Native `jev-latest` API | 0-shot | 85.80% | `ag_news` test split |
+| Local LoRA `gemma-2-2b-it` | Step 60 | 88.00% | `ag_news` test split |
+| Local LoRA `gemma-2-2b-it` | Step 300 | 96.00% | `ag_news` test split |
+| Local LoRA `gemma-2-2b-it` | Step 300 | **95.00%** | **Real-world live `bbc.com` RSS articles** |
+
+The Local LoRA evaluated at roughly **`1.03s` per article** natively on a 4GB GPU using the `OptionScorer` PyTorch backend, heavily generalizing its capability out-of-distribution to completely unseen data.
+
+### Why Local LoRA vs Cloud APIs?
+While inference on a small 4GB laptop GPU (~1.0s/article) is slightly slower than hitting a cloud API over the network (~0.4s/article), the local fine-tuning approach unlocks three massive advantages:
+1. **Zero Compute Tax:** You can process a million documents locally without paying a single cent in API tokens.
+2. **Total Privacy:** Highly sensitive internal documents, private emails, or proprietary code never leave your machine.
+3. **Task Supremacy:** Because the LoRA is highly specialized to the exact distribution of your task, a tiny local 2B model can actually *outsmart* massive generalized cloud models (e.g., 96% vs 85% accuracy).

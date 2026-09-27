@@ -6,8 +6,6 @@ import copy
 
 class TorchBackend:
     def __init__(self, model_path: str, device: str, adapter_path: str | None):
-        if adapter_path:
-            raise ValueError("MLX adapters are not compatible with the torch backend; use base HF weights")
         try:
             import torch
             from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, Gemma3ForConditionalGeneration
@@ -35,6 +33,9 @@ class TorchBackend:
         # Use its native wrapper so checkpoint names and tied weights load correctly.
         cls = Gemma3ForConditionalGeneration if config.model_type == "gemma3" else AutoModelForCausalLM
         self.model = cls.from_pretrained(model_path, torch_dtype=dtype).to(self.device).eval()
+        if adapter_path:
+            from peft import PeftModel
+            self.model = PeftModel.from_pretrained(self.model, adapter_path).eval()
         self.tok = AutoTokenizer.from_pretrained(model_path)
 
     def _tensor(self, ids):

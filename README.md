@@ -327,6 +327,10 @@ The synthetic task is easy for both. The real validation is your own labelled ro
 same split. If Gemma zero-shot is close to the trained head, Route B is enough; if not, train a head
 (Route A) with `make features && make train && make eval-head`.
 
+## LoRA Fine-Tuning
+
+See `finetune/README.md` for complete pipelines demonstrating how to fine-tune Gemma locally on both Apple Silicon (MLX) and NVIDIA GPUs (PyTorch) using `OptionScorer` to predict chess moves and categorize real-world news articles.
+
 ## Layout
 
 - `openjev/torch_backend.py`: PyTorch CPU/GPU inference and shared-prefix KV cache scoring.

@@ -8,8 +8,8 @@ Two modes:
 
 Usage:
     .venv/bin/python finetune/eval_chess.py                      # base model, rank
-    .venv/bin/python finetune/eval_chess.py --adapter adapters/chess-lora
-    .venv/bin/python finetune/eval_chess.py --mode generate --adapter adapters/chess-lora
+    .venv/bin/python finetune/eval_chess.py --adapter adapters/news-lora
+    .venv/bin/python finetune/eval_chess.py --mode generate --adapter adapters/news-lora
 """
 
 from __future__ import annotations
@@ -22,9 +22,9 @@ import time
 from openjev.scorer import OptionScorer, iter_jsonl
 
 
-def legal_moves_from_prompt(prompt: str) -> list[str]:
-    line = next(l for l in prompt.splitlines() if l.startswith("Legal moves: "))
-    return line[len("Legal moves: ") :].split()
+def options_from_prompt(prompt: str) -> list[str]:
+    line = next(l for l in prompt.splitlines() if l.startswith("Options: "))
+    return line[len("Options: ") :].split(", ")
 
 
 def eval_rank(scorer: OptionScorer, examples: list[dict]) -> dict:
@@ -33,7 +33,7 @@ def eval_rank(scorer: OptionScorer, examples: list[dict]) -> dict:
     for i, ex in enumerate(examples):
         if i % 5 == 0:
             print(f"Evaluated {i}/{len(examples)}")
-        moves = legal_moves_from_prompt(ex["prompt"])
+        moves = options_from_prompt(ex["prompt"])
         if len(moves) == 1:  # forced move; the scorer needs >= 2 options
             rank = 0
         else:
@@ -49,7 +49,7 @@ def eval_rank(scorer: OptionScorer, examples: list[dict]) -> dict:
         "top1": top1 / n,
         "top3": top3 / n,
         "mean_rank": sum(ranks) / n,
-        "chance_top1": sum(1 / len(legal_moves_from_prompt(e["prompt"])) for e in examples) / n,
+        "chance_top1": sum(1 / len(options_from_prompt(e["prompt"])) for e in examples) / n,
     }
 
 
@@ -64,7 +64,7 @@ def eval_generate(model_path: str, adapter: str | None, examples: list[dict]) ->
             print(f"Evaluated {i}/{len(examples)}")
         out = generate(model, tok, prompt=ex["prompt"], max_tokens=6, verbose=False)
         pred = out.strip().split()[0] if out.strip() else ""
-        moves = legal_moves_from_prompt(ex["prompt"])
+        moves = options_from_prompt(ex["prompt"])
         legal += pred in moves
         correct += pred == ex["completion"].strip()
         if len(samples) < 5:
@@ -77,7 +77,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="models/gemma-3-4b-it")
     ap.add_argument("--adapter", default=None)
-    ap.add_argument("--data", default="data/chess/test.jsonl")
+    ap.add_argument("--data", default="data/news/test.jsonl")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--mode", choices=["rank", "generate"], default="rank")
     args = ap.parse_args()
