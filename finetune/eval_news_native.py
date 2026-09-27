@@ -1,10 +1,16 @@
 """Evaluate zero-shot Jev on the AG News test slice and/or the BBC set.
 
-Unlike the original version, this caches the full answer object (choice +
-confidence), not just the choice, so top-1 accuracy and ECE can both be
-computed from one pass. Confidence is Jev's own calibration signal for a
-`choice` question (see docs/jev-research-2026-09-20.md); ECE bins on it the
-same way finetune/eval_news.py does for the local models.
+Caches the full answer object (choice + probabilities), not just the choice,
+so top-1 accuracy and ECE can both be computed from one pass, and the full
+distribution is available later for a probabilities-as-features comparison.
+
+ECE bins on `probabilities[choice]` -- the model's own probability for the
+class it picked -- not on the `confidence` field. Jev's `confidence` is a
+separate distribution-concentration measure (openjev/systemone.py computes
+it as 1 - normalised entropy; TypeSafe's docs give `(n*max_p-1)/(n-1)`), and
+the two disagree in general: the worked example in the main README shows
+`p=0.84, confidence=0.60` for the same answer. Binning ECE on `confidence`
+would be measuring calibration of the wrong quantity.
 """
 
 import argparse
@@ -44,7 +50,7 @@ def run(data_path: str, cache_path: str, limit: int, api_key: str) -> dict:
         ex = json.loads(line)
         item_id = f"item_{i}"
         entry = cache.get(item_id)
-        if entry is None or "confidence" not in entry:
+        if entry is None or "probabilities" not in entry:
             article = ex.get("text") or ex["prompt"].split("Article: ", 1)[1].split("\n\nOptions:")[0]
             req = {
                 "state": article,
@@ -70,7 +76,11 @@ def run(data_path: str, cache_path: str, limit: int, api_key: str) -> dict:
                     continue
                 data = resp.json()
                 ans = data["answers"]["category"]
-                entry = {"choice": ans["choice"], "confidence": ans.get("confidence")}
+                entry = {
+                    "choice": ans["choice"],
+                    "confidence": ans.get("confidence"),
+                    "probabilities": ans.get("probabilities"),
+                }
             except Exception as e:
                 print("Exception:", e)
                 time.sleep(1)
@@ -84,7 +94,8 @@ def run(data_path: str, cache_path: str, limit: int, api_key: str) -> dict:
         hit = entry["choice"] == target
         correct += hit
         total += 1
-        conf = entry.get("confidence")
+        probs = entry.get("probabilities")
+        conf = probs.get(entry["choice"]) if probs else None
         if conf is not None:
             b = min(9, int(conf * 10))
             conf_bins[b][0] += 1

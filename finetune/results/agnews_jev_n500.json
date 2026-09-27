@@ -1,5 +1,6 @@
 {
   "n": 500,
-  "top1": 0.854,
-  "ece": 0.0940200000000006
+  "top1": 0.858,
+  "ece": 0.10048000000000065,
+  "ece_note": "corrected: binned on probabilities[choice], not the confidence field (see eval_news_native.py docstring)"
 }
