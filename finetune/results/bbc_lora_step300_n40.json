@@ -1,0 +1,10 @@
+{
+  "n": 40,
+  "top1": 0.85,
+  "top3": 1.0,
+  "mean_rank": 0.175,
+  "ece": 0.12430705114009681,
+  "chance_top1": 0.25,
+  "adapter": "adapters/news-lora-2b/checkpoint-300",
+  "seconds": 53.4
+}

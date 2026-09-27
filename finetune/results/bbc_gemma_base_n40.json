@@ -1,0 +1,10 @@
+{
+  "n": 40,
+  "top1": 0.7,
+  "top3": 0.925,
+  "mean_rank": 0.55,
+  "ece": 0.24079758522239078,
+  "chance_top1": 0.25,
+  "adapter": null,
+  "seconds": 37.5
+}
