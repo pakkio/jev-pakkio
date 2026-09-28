@@ -303,6 +303,106 @@ Workload: 202-token context, 8 options, 242 option tokens total.
 
 Model load is about 1 s from a warm disk. First forward pass adds under a second of warm-up.
 
+## Measured on Colab T4, 16 GB (PyTorch, bf16, fine-tuned LoRA vs Jev)
+
+`gemma-2-2b-it` + `adapters/news-lora-2b/checkpoint-300`, scoring 4-way news category
+classification (World/Sports/Business/Sci-Tech) on a 40-article held-out set
+(`bbc_test.jsonl`), `--norm sum`, compared against TypeSafe's hosted Jev on the same data:
+
+| setup | accuracy | latency / article |
+|---|---|---|
+| Jev (cloud) | 87.5% (35/40) | 0.29 s |
+| openjev + LoRA, full GPU, shared-prefix cached scoring | 85.0% (34/40) | 0.47 s |
+| openjev + LoRA, full GPU, naive per-option re-encoding | 85.0% (34/40) | 1.43 s |
+| openjev + LoRA, CPU-offloaded (4 GB laptop GPU) | 85.0% (34/40) | 7.40 s |
+
+Accuracy is stable across every configuration — it was never an accuracy problem, purely
+latency/placement. Two things worth knowing if you're on a small card:
+
+- **Under ~6-7 GB VRAM, `device_map="auto"` will split the model across GPU and CPU per layer.**
+  On a 4 GB card this thrashed at 0% GPU utilization and made scoring ~16x slower than the same
+  model fully resident on a 16 GB T4, despite identical accuracy. If you see near-zero
+  `nvidia-smi` GPU utilization while a forward pass runs, this is almost certainly why — either
+  quantize (`--quantize 4bit`/`8bit`) to fit on the small card, or use a bigger one.
+- `torch.compile` was tried on the T4 and **did not help**: Turing-generation cards (T4, and
+  anything pre-Ampere) have no native bf16 tensor cores, so Inductor silently skips compiling the
+  bf16 matmuls (`UserWarning: Tesla T4 does not support bfloat16 compilation natively, skipping`).
+  Switching to fp16 to work around it risks Gemma's known fp16 overflow issues, and combining
+  `dynamic=True` with PEFT's wrapped `forward` plus per-article varying sequence lengths caused a
+  run to hang rather than compile. Not worth chasing on this class of GPU; the shared-prefix KV
+  cache (already the default `score()` path, see above) is the optimization that actually pays off.
+
+### Why shared-prefix scoring is 3x faster than naive re-encoding
+
+The naive approach re-encodes `context + option` from scratch for every option: with 4 categories,
+that's 4 full forward passes over the ~300-token article, each redoing the same context work three
+extra times. The shared-prefix version (this repo's actual `OptionScorer.score()`, reproduced below
+from `openjev/scorer_torch.py`) prefills the context **once**, then reuses that cached KV state for
+all 4 short option continuations in a single batched pass — the article is only ever encoded once,
+no matter how many options you're scoring:
+
+```python
+def score_options(context: str, options: list[str]) -> list[float]:
+    # 1. Tokenize context once, and each option separately (options are short:
+    #    a word or two, e.g. " World"). The leading space matters -- it has to
+    #    tokenize the way training data's completions were formatted.
+    ctx_ids = tok.encode(context, add_special_tokens=True)
+    opts = [tok.encode(o, add_special_tokens=False) for o in options]
+
+    # 2. PREFILL: run the model over the context exactly once, with
+    #    use_cache=True so it returns the KV cache (attention keys/values for
+    #    every layer, for every context token) alongside the logits. This is
+    #    the expensive part -- one full attention pass over ~300 tokens -- and
+    #    it now happens a single time regardless of how many options follow.
+    input_ids = torch.tensor([ctx_ids], device=model.device)
+    with torch.no_grad():
+        out = model(input_ids, use_cache=True)
+    kv = _cache_tensors(out.past_key_values)       # snapshot as plain tensors
+    last_logits = out.logits[0, -1].float()         # logits predicting the *next* token after context
+
+    # 3. Pad all options to the same length so they fit one batched tensor,
+    #    and build a mask so padding doesn't pollute the log-prob sum.
+    n = len(opts)
+    L = max(len(o) for o in opts)
+    arr = torch.full((n, L), pad_id, dtype=torch.long, device=model.device)
+    mask = torch.zeros((n, L), dtype=torch.float32, device=model.device)
+    for i, o in enumerate(opts):
+        arr[i, :len(o)] = torch.tensor(o, dtype=torch.long)
+        mask[i, :len(o)] = 1.0
+
+    # 4. Replicate the ONE cached context KV across the option batch dimension
+    #    (n copies, one per option) instead of recomputing it n times. This is
+    #    cheap -- copying already-computed tensors -- versus n more attention
+    #    passes over the full context.
+    expanded = _repeat_kv(kv, n)
+
+    # 5. Score all n options in ONE forward pass: the model only has to attend
+    #    over each option's few tokens against the (shared, reused) context KV,
+    #    not re-derive the context representation from scratch.
+    with torch.no_grad():
+        out2 = model(input_ids=arr, past_key_values=expanded, use_cache=False)
+    logits = out2.logits.float()
+
+    # 6. The log-prob of an option's first token is predicted by the context's
+    #    last logits (from step 2); each subsequent token is predicted by the
+    #    previous option token. Stitch these together, then read off
+    #    log p(option_token | everything before it) for every option token.
+    first = last_logits.unsqueeze(0).unsqueeze(0).expand(n, 1, -1)
+    pred = torch.cat([first, logits[:, :-1]], dim=1)
+    log_probs = F.log_softmax(pred, dim=-1)
+    target = arr.unsqueeze(-1)
+    tgt_lp = log_probs.gather(-1, target).squeeze(-1)
+
+    # 7. Sum log-probs over each option's real tokens (mask zeroes out padding),
+    #    then softmax across options for a calibrated probability distribution.
+    sums = (tgt_lp * mask).sum(-1).cpu().tolist()
+    return _softmax(sums)
+```
+
+The saving scales with option count: 4 options here means ~4x less context-encoding work than
+naive re-encoding, which roughly matches the measured 1.43 s → 0.47 s speedup (the remaining time
+is the now-unavoidable single prefill pass plus the small batched option pass, not redundant work).
+
 ## Validating against jevlike
 
 `jevlike` is installed into the same venv (`uv pip install -e ../../vinnylarouge/jevlike`), so both

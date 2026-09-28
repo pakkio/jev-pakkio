@@ -59,8 +59,11 @@ def _scorer(args: argparse.Namespace):
         kwargs["quantize"] = quantize
     elif quantize != "none":
         raise SystemExit("--quantize requires --backend torch")
-    s = scorer_mod.OptionScorer(args.model, batch_size=args.batch_size, chat=args.chat, sep=args.sep, **kwargs)
-    print(f"loaded {args.model} in {time.perf_counter() - t:.1f}s", file=sys.stderr)
+    if getattr(args, "adapter", None):
+        kwargs["adapter_path"] = args.adapter
+    model_path = args.model or scorer_mod.DEFAULT_MODEL
+    s = scorer_mod.OptionScorer(model_path, batch_size=args.batch_size, chat=args.chat, sep=args.sep, **kwargs)
+    print(f"loaded {model_path} in {time.perf_counter() - t:.1f}s", file=sys.stderr)
     return s
 
 

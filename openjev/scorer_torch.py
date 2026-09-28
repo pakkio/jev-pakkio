@@ -105,6 +105,7 @@ class OptionScorer:
         chat: bool = False,
         sep: str = "",
         quantize: str | None = None,
+        adapter_path: str | None = None,
     ) -> None:
         self.model_path = model_path
         self.quantize = quantize or "none"
@@ -115,6 +116,10 @@ class OptionScorer:
             device_map=_device_map(quantize),
             quantization_config=quantization_config(quantize),
         )
+        if adapter_path:
+            from peft import PeftModel
+
+            self.model = PeftModel.from_pretrained(self.model, adapter_path)
         self.model.eval()
         self.batch_size = max(1, batch_size)
         self.chat = chat
