@@ -1,6 +1,6 @@
 """Play chess against the fine-tuned Gemma from the terminal.
 
-The model picks its move by ranking every legal move with openjev's
+The model picks its move by ranking every legal move with jev_pakkio's
 OptionScorer (the same one-pass scoring the server uses). You type moves in
 UCI (e2e4) or SAN (Nf3, O-O). Commands: `moves` lists legal moves, `hint`
 shows the model's top choices for your side, `undo` takes back a full move,
@@ -21,7 +21,7 @@ import sys
 import chess
 
 from finetune.prepare_chess_data import board_ascii, make_prompt
-from openjev.scorer import OptionScorer
+from jev_pakkio.scorer import OptionScorer
 
 
 def rank_moves(scorer: OptionScorer, board: chess.Board, top: int = 3) -> list[tuple[chess.Move, float]]:

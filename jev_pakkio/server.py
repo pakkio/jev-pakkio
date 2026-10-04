@@ -1,6 +1,6 @@
 """HTTP server: one loaded model, many scoring requests.
 
-    openjev serve --host 0.0.0.0 --port 8000
+    jev_pakkio serve --host 0.0.0.0 --port 8000
     curl -s localhost:8000/score -H 'content-type: application/json' \
       -d '{"context": "The capital of France is", "options": [" Paris", " Berlin"]}'
 """
@@ -30,49 +30,26 @@ from .systemone import (
 def _resolve_backend(backend: str | None = None) -> str:
     """Resolve the scoring backend.
 
-    Precedence: explicit arg > OPENJEV_BACKEND env var > "mlx".
+    Precedence: explicit arg > OPENJEV_BACKEND env var > "auto" (mlx on Apple
+    silicon, torch everywhere else -- see cli.resolve_backend).
     """
-    if backend and backend in ("mlx", "torch"):
-        return backend
+    from .cli import resolve_backend
+
+    if backend and backend in ("mlx", "torch", "auto"):
+        return resolve_backend(backend)
     env_backend = os.environ.get("OPENJEV_BACKEND")
-    if env_backend in ("mlx", "torch"):
-        return env_backend
-    return "mlx"
+    if env_backend in ("mlx", "torch", "auto"):
+        return resolve_backend(env_backend)
+    return resolve_backend("auto")
 
 
-def _get_scorer_class(backend: str):
-    """Return the OptionScorer class for the given backend.
+def _auto_model(backend: str) -> str:
+    """The largest model this machine can hold; MLX has no VRAM to size."""
+    if backend != "torch":
+        return _default_model(backend)
+    from .scorer_torch import auto_model
 
-    Imported lazily: mlx is Apple-silicon only, so importing it on a CUDA or
-    CPU host fails at load time even when the torch backend is the one wanted.
-    """
-    if backend == "torch":
-        from .scorer_torch import OptionScorer as TorchOptionScorer
-        return TorchOptionScorer
-    from .scorer import OptionScorer as MLXOptionScorer
-    return MLXOptionScorer
-
-
-def _default_model(backend: str) -> str:
-    """Each backend ships its own default checkpoint format."""
-    if backend == "torch":
-        from .scorer_torch import DEFAULT_MODEL
-    else:
-        from .scorer import DEFAULT_MODEL
-    return DEFAULT_MODEL
-
-
-def _resolve_backend(backend: str | None = None) -> str:
-    """Resolve the scoring backend.
-
-    Precedence: explicit arg > OPENJEV_BACKEND env var > "mlx".
-    """
-    if backend and backend in ("mlx", "torch"):
-        return backend
-    env_backend = os.environ.get("OPENJEV_BACKEND")
-    if env_backend in ("mlx", "torch"):
-        return env_backend
-    return "mlx"
+    return auto_model()
 
 
 def _get_scorer_class(backend: str):
@@ -159,7 +136,8 @@ def _resolve_heads(heads: dict | None) -> dict:
 
 
 def create_app(model_path: str | None = None, batch_size: int = 8, backend: str | None = None,
-               quantize: str | None = None, heads: dict | None = None, lora: dict | None = None) -> FastAPI:
+               device: str = "auto", quantize: str | None = None, heads: dict | None = None,
+               lora: dict | None = None) -> FastAPI:
     """lora: {name: adapter_dir}. When given (torch only), the server runs in LoRA mode: one
     4-bit model through lora_serve.LoraEngine instead of OptionScorer, /v1/lora/score picks an
     adapter per request, and /score + /v1/systemone use the chat format with the adapter named
@@ -171,8 +149,11 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
     quantize = _resolve_quantize(quantize)
     head_paths = _resolve_heads(heads)
     model_path = model_path or os.environ.get("OPENJEV_MODEL") or _default_model(backend)
+    if model_path == "auto":
+        # Same rule as the CLI: largest model this machine's VRAM can hold.
+        model_path = _auto_model(backend)
     OptionScorer = _get_scorer_class(backend)
-    app = FastAPI(title="openjev", version="0.1.0")
+    app = FastAPI(title="jev_pakkio", version="0.1.0")
     state: dict = {}
     api_key = os.environ.get("OPENJEV_API_KEY")  # if set, /v1/systemone requires "Authorization: Bearer ***"
     model_name = os.path.basename(model_path.rstrip("/"))
@@ -193,6 +174,8 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
             state["load_s"] = time.perf_counter() - t
             return
         kwargs = {"quantize": quantize} if backend == "torch" else {}
+        if backend == "torch" and device and device != "auto":
+            kwargs["device"] = device
         scorer = OptionScorer(model_path, batch_size=batch_size, **kwargs)
         scorer.score("warm up", ["a", "b"])  # compile kernels / warm up before the first request
         state["scorer"] = scorer
@@ -353,7 +336,9 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
 
 
 def serve(host: str, port: int, model_path: str | None, batch_size: int, backend: str | None = None,
-          quantize: str | None = None, heads: dict | None = None, lora: dict | None = None) -> None:
+          device: str = "auto", quantize: str | None = None, heads: dict | None = None,
+          lora: dict | None = None) -> None:
     import uvicorn
 
-    uvicorn.run(create_app(model_path, batch_size, backend, quantize, heads, lora), host=host, port=port, workers=1)
+    uvicorn.run(create_app(model_path, batch_size, backend, device, quantize, heads, lora),
+                host=host, port=port, workers=1)

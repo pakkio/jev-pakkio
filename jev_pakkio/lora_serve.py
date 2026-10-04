@@ -1,8 +1,8 @@
 """Serve LoRA adapters: one 4-bit base model, any number of named adapters, switched per request.
 
-Used by the HTTP server in LoRA mode (``openjev serve --backend torch --lora NAME=PATH``).
+Used by the HTTP server in LoRA mode (``jev_pakkio serve --backend torch --lora NAME=PATH``).
 An adapter dir may hold the float32 ``adapter_model.safetensors`` or the int8 file written
-by ``openjev lora-quantize``.
+by ``jev_pakkio lora-quantize``.
 """
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""Play Doom in the terminal with the openjev scorer choosing every action.
+"""Play Doom in the terminal with the jev_pakkio scorer choosing every action.
 
 Each decision step: ViZDoom renders a frame -> the frame is described in a few lines of
-text -> the openjev server scores the scenario's action menu as continuations of that text
+text -> the jev_pakkio server scores the scenario's action menu as continuations of that text
 -> the highest-probability action is pressed for `--frame-skip` tics. Nothing is generated;
 the model only ranks the options, which is the jevlike / System One idea.
 
@@ -87,7 +87,7 @@ def decide(client: Client, api: str, snap, doom: Doom, last: str | None) -> Deci
 def panel_lines(args, snap, decision: Decision | None, chosen: str | None, source: str, mode: str,
                 episode: int, step: int, total_reward: float, note: str) -> list[str]:
     W = 43
-    L = [f"openjev doom  [{args.scenario}]  {mode}",
+    L = [f"jev_pakkio doom  [{args.scenario}]  {mode}",
          f"episode {episode}  step {step}  tic {snap.tic}",
          f"health {snap.health:3d}  ammo {snap.ammo:3d}  kills {snap.kills}  reward {total_reward:.0f}",
          ""]
@@ -135,7 +135,7 @@ def main() -> None:
     try:
         h = client.health()
     except ServerDown as e:
-        sys.exit(f"{e}\nStart the server first:  make serve   (or: .venv/bin/openjev serve)")
+        sys.exit(f"{e}\nStart the server first:  make serve   (or: .venv/bin/jev_pakkio serve)")
     if not h.get("ok"):
         sys.exit("server is up but the model is still loading; try again in a moment")
 

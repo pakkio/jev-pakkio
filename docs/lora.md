@@ -32,7 +32,7 @@ matches which genre.
 ## Train
 
 ```sh
-.venv/bin/openjev lora DATA/train.jsonl --validation DATA/validation.jsonl --test DATA/test.jsonl \
+.venv/bin/jev_pakkio lora DATA/train.jsonl --validation DATA/validation.jsonl --test DATA/test.jsonl \
     --model google/gemma-4-E4B-it --chat --eval-every 500 --max-rows 1000 --out runs/lora-TASK
 ```
 
@@ -59,8 +59,8 @@ Or `make lora` with `LORA_DATA`, `LORA_MODEL` and `LORA` set.
 ## Evaluate and shrink
 
 ```sh
-.venv/bin/openjev lora-eval runs/lora-TASK DATA/test.jsonl --model google/gemma-4-E4B-it [--chat]
-.venv/bin/openjev lora-quantize runs/lora-TASK        # -> runs/lora-TASK-int8
+.venv/bin/jev_pakkio lora-eval runs/lora-TASK DATA/test.jsonl --model google/gemma-4-E4B-it [--chat]
+.venv/bin/jev_pakkio lora-quantize runs/lora-TASK        # -> runs/lora-TASK-int8
 ```
 
 `lora-eval` reports the adapter, the shuffled-context control and the same

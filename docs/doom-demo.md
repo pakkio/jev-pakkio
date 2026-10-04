@@ -5,7 +5,7 @@ lets the server rank the action menu with one `/score` call (or one System One
 `choice` question). Nothing is generated: one prefill per decision, one padded
 forward pass over the menu, argmax, press the keys, repeat.
 
-![openjev playing Doom in the terminal](media/doom-recording.gif)
+![jev_pakkio playing Doom in the terminal](media/doom-recording.gif)
 
 *(Full-resolution recording: [`doom-recording.mov`](media/doom-recording.mov).)*
 

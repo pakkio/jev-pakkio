@@ -1,5 +1,5 @@
 [project]
-name = "openjev"
+name = "jev_pakkio"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
@@ -25,17 +25,23 @@ torch = [
     "peft>=0.21.0",
 ]  # CUDA / CPU
 doom = ["vizdoom>=1.2.4"]                         # demo/doom: play Doom in the terminal with the server choosing actions
+mcp = [
+    "mcp[cli]>=2.3.0",
+]
+typesafe = [
+    "typesafe-sdk>=0.7.0",
+]        # mcp_server.py's jev tool: hosted api.typesafe.ai
 
 
 [project.scripts]
-openjev = "openjev.cli:main"
+jev_pakkio = "jev_pakkio.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["openjev"]
+packages = ["jev_pakkio"]
 
 [dependency-groups]
 test = ["httpx>=0.27"]

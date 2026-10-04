@@ -31,7 +31,7 @@ the test cache.
 ## 1. Cache the features
 
 ```sh
-.venv/bin/openjev features DATA --out F.npz
+.venv/bin/jev_pakkio features DATA --out F.npz
 ```
 
 This stops Gemma before the LM head and keeps two things per example: every
@@ -49,7 +49,7 @@ matching itself.
 ## 2. Train the head
 
 ```sh
-.venv/bin/openjev train runs/feats/train.npz \
+.venv/bin/jev_pakkio train runs/feats/train.npz \
     --validation runs/feats/validation.npz --out runs/head.safetensors
 ```
 
@@ -66,7 +66,7 @@ hidden size and training config.
 ## 3. Evaluate, and check the control
 
 ```sh
-.venv/bin/openjev eval-head runs/head.safetensors runs/feats/test.npz
+.venv/bin/jev_pakkio eval-head runs/head.safetensors runs/feats/test.npz
 ```
 
 This reports what `jevlike-eval` reports: top-1, top-3, 10-bin expected
@@ -98,7 +98,7 @@ match options to the state, and its ECE of 0.03 is what a calibrated
 
 The synthetic task above is easy for both, so it does not settle the question.
 The real validation is your own labelled rows: run
-[`openjev eval`](cli.md#eval) on them zero-shot, and compare against a
+[`jev_pakkio eval`](cli.md#eval) on them zero-shot, and compare against a
 `jevlike-train` / `jevlike-eval` run on the same split.
 
 - If Gemma zero-shot is close to the trained head, Route B (zero-shot
@@ -113,7 +113,7 @@ JSONL. Generate its synthetic menu set, then score it both ways:
 
 ```sh
 .venv/bin/jevlike-data synthetic --output data/synthetic
-.venv/bin/openjev eval data/synthetic/test.jsonl --norm sum --sep $'\nChoice: '
+.venv/bin/jev_pakkio eval data/synthetic/test.jsonl --norm sum --sep $'\nChoice: '
 .venv/bin/jevlike-train data/synthetic/train.jsonl --validation data/synthetic/validation.jsonl \
     --output runs/synthetic-tiny.pt --device mps
 .venv/bin/jevlike-eval runs/synthetic-tiny.pt data/synthetic/test.jsonl --device mps
@@ -123,7 +123,7 @@ Results on the 400-row synthetic test set (2026-09-16):
 
 | scorer | training | top-1 | top-3 | median latency / example |
 |---|---|---|---|---|
-| openjev, Gemma 3 4B zero-shot, `--norm sum` | none | 1.000 | 1.000 | 0.086 s |
-| openjev, `--norm mean` | none | 0.988 | 1.000 | 0.086 s |
-| openjev, `--norm pmi` | none | 0.988 | 1.000 | 0.153 s |
+| jev_pakkio, Gemma 3 4B zero-shot, `--norm sum` | none | 1.000 | 1.000 | 0.086 s |
+| jev_pakkio, `--norm mean` | none | 0.988 | 1.000 | 0.086 s |
+| jev_pakkio, `--norm pmi` | none | 0.988 | 1.000 | 0.153 s |
 | jevlike tiny byte encoder + head | 2000 rows, 8 epochs | 0.998 | 1.000 | well under 10 ms |

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import random
 import statistics
 import sys
@@ -10,8 +11,21 @@ import time
 
 # NOTE: backend modules are imported lazily in _get_backend_modules so that
 # `--help` and `--backend torch` work on machines without MLX (e.g. Linux).
-DEFAULT_MODEL = "models/gemma-3-4b-it"
+DEFAULT_MODEL = "google/gemma-4-E2B-it"
 NORMS = ("mean", "sum", "pmi")
+
+
+def resolve_backend(backend: str) -> str:
+    """"auto" means mlx only on Apple silicon; everywhere else it means torch.
+
+    One place, so every command agrees: _get_backend_modules, _scorer and
+    server._resolve_backend all call this.
+    """
+    if backend != "auto":
+        return backend
+    if platform.system() == "Darwin" and platform.machine() == "arm64":
+        return "mlx"
+    return "torch"
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
@@ -25,8 +39,6 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--chat", action="store_true",
                    help="wrap context in Gemma's chat template; options score as the reply")
     p.add_argument("--sep", default="", help="string inserted between context and option")
-    p.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
-                   help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     p.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
                    help="torch backend only: load the weights quantised via bitsandbytes")
 
@@ -37,6 +49,7 @@ def _get_backend_modules(backend: str):
     Returns (scorer, features, train, head) modules. The torch modules are
     imported lazily so the MLX path has no torch dependency.
     """
+    backend = resolve_backend(backend)
     if backend == "torch":
         from . import features_torch
         from . import head_torch
@@ -52,16 +65,27 @@ def _get_backend_modules(backend: str):
 
 def _scorer(args: argparse.Namespace):
     t = time.perf_counter()
-    scorer_mod, _, _, _ = _get_backend_modules(args.backend)
+    backend = resolve_backend(args.backend)
+    scorer_mod, _, _, _ = _get_backend_modules(backend)
     kwargs = {}
     quantize = getattr(args, "quantize", "none")
-    if args.backend == "torch":
+    if backend == "torch":
         kwargs["quantize"] = quantize
     elif quantize != "none":
         raise SystemExit("--quantize requires --backend torch")
     if getattr(args, "adapter", None):
         kwargs["adapter_path"] = args.adapter
+    device = getattr(args, "device", "auto")
+    if device and device != "auto" and backend != "torch":
+        raise SystemExit("--device requires --backend torch")
+    if device and device != "auto":
+        kwargs["device"] = device
     model_path = args.model or scorer_mod.DEFAULT_MODEL
+    if model_path == "auto":
+        # `--model auto`: largest model this machine's VRAM can hold. Only the
+        # torch backend knows how to size itself; MLX keeps its own default.
+        model_path = scorer_mod.auto_model() if hasattr(scorer_mod, "auto_model") else scorer_mod.DEFAULT_MODEL
+        print(f"auto-selected model: {model_path}", file=sys.stderr)
     s = scorer_mod.OptionScorer(model_path, batch_size=args.batch_size, chat=args.chat, sep=args.sep, **kwargs)
     print(f"loaded {model_path} in {time.perf_counter() - t:.1f}s", file=sys.stderr)
     return s
@@ -229,7 +253,8 @@ def cmd_serve(args: argparse.Namespace) -> None:
         if not sep or not name or not path:
             raise SystemExit(f"--lora expects NAME=PATH, got {spec!r}")
         lora[name] = path
-    serve(args.host, args.port, args.model, args.batch_size, args.backend, args.quantize, heads or None, lora or None)
+    serve(args.host, args.port, args.model, args.batch_size, backend=args.backend, device=args.device,
+          quantize=args.quantize, heads=heads or None, lora=lora or None)
 
 
 def cmd_features(args: argparse.Namespace) -> None:
@@ -274,6 +299,13 @@ def cmd_lora_eval(args: argparse.Namespace) -> None:
                                              chat=args.chat), indent=2))
 
 
+def cmd_mcp(args: argparse.Namespace) -> None:
+    from . import mcp_server
+
+    mcp_server.run(args.host, args.port, args.model, backend=args.backend, device=args.device,
+                   quantize=args.quantize)
+
+
 def cmd_lora_quantize(args: argparse.Namespace) -> None:
     from . import lora_torch
 
@@ -281,7 +313,7 @@ def cmd_lora_quantize(args: argparse.Namespace) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    p = argparse.ArgumentParser(prog="openjev", description=__doc__)
+    p = argparse.ArgumentParser(prog="jev_pakkio", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("score", help="score options for one context")
@@ -387,8 +419,6 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:N, or mps")
     v.add_argument("--host", default="127.0.0.1")
     v.add_argument("--port", type=int, default=8000)
-    v.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
-                   help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     v.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
                      help="torch backend only: load the weights quantised via bitsandbytes")
     v.add_argument("--head-choice", default=None, help="Route-A choice head checkpoint for /score and choice questions")
@@ -398,6 +428,17 @@ def main(argv: list[str] | None = None) -> None:
                    help="LoRA mode (torch): load an adapter under NAME; repeatable. NAME choice/score/noul "
                         "also serves that /v1/systemone question type")
     v.set_defaults(fn=cmd_serve)
+
+    m = sub.add_parser("mcp", help="MCP server over streamable-http: noul, rate, classify, "
+                                    "jev/jev-pakkio, train_lora, status")
+    m.add_argument("--model", default=None)
+    m.add_argument("--backend", choices=("auto", "mlx", "torch"), default="auto")
+    m.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:N, or mps")
+    m.add_argument("--host", default="127.0.0.1")
+    m.add_argument("--port", type=int, default=5001)
+    m.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
+                   help="torch backend only: load the weights quantised via bitsandbytes")
+    m.set_defaults(fn=cmd_mcp)
 
     args = p.parse_args(argv)
     if len(getattr(args, "option", []) or []) == 1:

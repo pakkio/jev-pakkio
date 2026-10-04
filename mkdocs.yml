@@ -1,4 +1,4 @@
-site_name: openjev
+site_name: jev_pakkio
 site_description: One-pass option scoring with a local Gemma 3 4B on Apple silicon via MLX.
 site_url: https://daseinlabs.ai/open-jev/
 repo_url: https://github.com/daseinlabs/open-jev

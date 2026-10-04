@@ -1,8 +1,8 @@
-# Doom in the terminal, openjev picks the moves
+# Doom in the terminal, jev_pakkio picks the moves
 
 The [jev](https://docs.typesafe.ai) Doom example trains a byte-level scorer on
 raw frames and lets it choose the next keypress. This demo does the same loop
-with the openjev server as the backend: a plain Gemma 3 4B ranks a short menu
+with the jev_pakkio server as the backend: a plain Gemma 3 4B ranks a short menu
 of actions given a text description of what is on screen. Nothing is
 generated. One prefill per decision, one padded forward pass over the menu,
 argmax, press the keys, repeat.

@@ -1,8 +1,8 @@
-# Per-task fine-tuning with Gemma: what jevlike does, what openjev must add
+# Per-task fine-tuning with Gemma: what jevlike does, what jev_pakkio must add
 
 Written 2026-09-16. Companion to [one-pass-option-scoring.md](one-pass-option-scoring.md).
 
-Today openjev answers System One questions zero-shot: it renders a prompt and reads Gemma's
+Today jev_pakkio answers System One questions zero-shot: it renders a prompt and reads Gemma's
 next-token likelihoods. That gives the right decision often but meaningless probabilities
 (see the README comparison: 1.00 where Jev says 0.84). Turning it into a per-task, calibrated
 scorer means training something on labelled examples. This document lists exactly what has to
@@ -12,13 +12,13 @@ change, task by task, and what can be copied from `jevlike`.
 
 ## 1. What jevlike trains, and what it does not
 
-| Piece | jevlike (PyTorch) | Status in openjev (MLX) |
+| Piece | jevlike (PyTorch) | Status in jev_pakkio (MLX) |
 |---|---|---|
 | Encoder | Frozen `AutoModel` (default Qwen 0.5B) or a tiny byte encoder | Gemma 3 4B via mlx-lm, used only through its LM head |
 | Features | Context: all token hidden states. Option: mean-pooled hidden states | Not extracted; only logits are read |
 | Head | One cross-attention layer, width `--rank`: option vector queries context tokens, dot product gives a logit per option | None |
 | Loss | Listwise softmax cross-entropy over the options of one example | None |
-| Data | JSONL `{"context", "options", "label"}` | Same format accepted by `openjev eval` |
+| Data | JSONL `{"context", "options", "label"}` | Same format accepted by `jev_pakkio eval` |
 | Calibration | Falls out of cross-entropy; measured as ECE in `jevlike-eval` | None |
 | Caching | None: encoder re-run every epoch | Prefix-cached inference only |
 | Checkpoint | Head weights + encoder name | n/a |
@@ -39,7 +39,7 @@ before the LM head; shape `(batch, tokens, 2560)` for Gemma 3 4B.
   attend to the context (prefix-shared cache), each pooled option vector already contains the
   match: the head reaches 100% in one epoch and the shuffled-context control also reads 100%,
   so nothing can be verified. Standalone options cost the same and keep the control honest.
-  (Implemented: `openjev features`, with `--contextual` as the leaky alternative.)
+  (Implemented: `jev_pakkio features`, with `--contextual` as the leaky alternative.)
 - **Cache to disk** as `.npz` per example: `context_h (Lc, 2560)`, `options_h (N, 2560)`,
   `label`. One pass over the dataset, then head training never touches Gemma again.
   At about 100 ms per example, 5,000 examples take under 10 minutes.
@@ -110,7 +110,7 @@ Report what jevlike reports so results are comparable:
 - **ECE** (10-bin expected calibration error) so `confidence` and `probabilities` mean
   something. This is the number that separates a trained head from zero-shot softmax.
 
-Add these to `openjev eval` so zero-shot and trained heads are compared with one command.
+Add these to `jev_pakkio eval` so zero-shot and trained heads are compared with one command.
 
 ## 7. Serving
 

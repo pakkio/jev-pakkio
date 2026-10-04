@@ -67,7 +67,7 @@ class CalibrationTests(unittest.TestCase):
                 rows = [dict(prompt=f'FEN: {fen}\nLegal moves: a b', completion=t) for t in targets]
                 (root/f'{split}.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in rows))
             argv = ['run', '--data', d, '--base-only', '--model', d, '--out', str(root/'out')]
-            with patch.object(sys, 'argv', argv), patch.dict(sys.modules, {'openjev.scorer': types.SimpleNamespace(OptionScorer=FakeScorer)}):
+            with patch.object(sys, 'argv', argv), patch.dict(sys.modules, {'jev_pakkio.scorer': types.SimpleNamespace(OptionScorer=FakeScorer)}):
                 main()
             fit = json.loads((root/'out/base-calibrator.json').read_text())
             report = json.loads((root/'out/metrics.json').read_text())

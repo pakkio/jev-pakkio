@@ -2,7 +2,7 @@ import json
 import time
 import httpx
 import torch
-from openjev import OptionScorer
+from jev_pakkio import OptionScorer
 
 def get_api_key():
     with open("../.env") as f:

@@ -1,12 +1,12 @@
 """Evaluate AG News categorization on the held-out test split.
 
 Two modes:
-  rank     -- score every category as an option with openjev's OptionScorer
+  rank     -- score every category as an option with jev_pakkio's OptionScorer
               (the same one-pass ranking the server uses) and report top-1 /
               top-3 accuracy plus ECE against the gold category.
   generate -- greedy-decode a category and check it matches exactly.
 
-Backend is whatever openjev.scorer.OptionScorer picks (MLX on Apple silicon,
+Backend is whatever jev_pakkio.scorer.OptionScorer picks (MLX on Apple silicon,
 PyTorch/transformers elsewhere) via `--model`/`--adapter`; the news-lora-2b
 adapter was trained against `google/gemma-2-2b-it` (see train_news_torch.py),
 so that is the default here, not the chess-eval Gemma 3 4B default.
@@ -23,7 +23,7 @@ import argparse
 import json
 import time
 
-from openjev.scorer import OptionScorer, iter_jsonl
+from jev_pakkio.scorer import OptionScorer, iter_jsonl
 
 DEFAULT_MODEL = "google/gemma-2-2b-it"
 

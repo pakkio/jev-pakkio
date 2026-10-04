@@ -13,9 +13,9 @@ class NoMLX:
         if fullname.split('.')[0] in ('mlx', 'mlx_lm'):
             raise ImportError('MLX deliberately unavailable')
 sys.meta_path.insert(0, NoMLX())
-import openjev
-from openjev.cli import main
-sys.argv = ['openjev', 'serve', '--help']
+import jev_pakkio
+from jev_pakkio.cli import main
+sys.argv = ['jev_pakkio', 'serve', '--help']
 main()
 '''
         result = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True)
@@ -24,21 +24,22 @@ main()
         self.assertIn('--device', result.stdout)
 
     def test_serve_cli_forwards_device(self):
-        from openjev.cli import main
-        with patch.object(sys, 'argv', ['openjev', 'serve', '--backend', 'torch', '--device', 'cpu']), patch('openjev.server.serve') as serve:
+        from jev_pakkio.cli import main
+        with patch.object(sys, 'argv', ['jev_pakkio', 'serve', '--backend', 'torch', '--device', 'cpu']), patch('jev_pakkio.server.serve') as serve:
             main()
         self.assertEqual(serve.call_args.kwargs['backend'], 'torch')
         self.assertEqual(serve.call_args.kwargs['device'], 'cpu')
 
     def test_server_forwards_backend(self):
         from fastapi.testclient import TestClient
-        from openjev.server import create_app
-        with patch('openjev.server.OptionScorer') as scorer:
+        from jev_pakkio.server import create_app
+        with patch('jev_pakkio.server._get_scorer_class') as get_scorer:
+            scorer = get_scorer.return_value
             scorer.return_value.backend = 'torch'
             scorer.return_value.device = 'cpu'
             with TestClient(create_app(model_path='test-model', backend='torch', device='cpu')) as client:
                 self.assertEqual(client.get('/health').status_code, 200)
-            self.assertEqual(scorer.call_args.kwargs['backend'], 'torch')
+            self.assertEqual(get_scorer.call_args.args[0], 'torch')
             self.assertEqual(scorer.call_args.kwargs['device'], 'cpu')
 
 

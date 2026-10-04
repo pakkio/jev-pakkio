@@ -1,4 +1,4 @@
-# openjev
+# jev_pakkio
 
 One-pass option scoring with a local Gemma 3 4B, on Apple silicon via MLX or on
 NVIDIA/CPU via PyTorch (`--backend torch`).
@@ -18,7 +18,7 @@ lets the server rank the action menu with one `/score` call (or one System One
 `choice` question). Start `make serve`, then `make doom`. Details and keys in
 [`demo/doom/README.md`](demo/doom/README.md).
 
-![openjev playing Doom in the terminal: the model ranks the action menu each step](docs/media/doom-recording.gif)
+![jev_pakkio playing Doom in the terminal: the model ranks the action menu each step](docs/media/doom-recording.gif)
 
 Full-resolution recording: [docs/media/doom-recording.mov](docs/media/doom-recording.mov).
 
@@ -32,7 +32,7 @@ Install Python 3.12+ and [uv](https://docs.astral.sh/uv/getting-started/installa
 uv sync
 uv run hf auth login
 uv run hf download google/gemma-3-4b-it --local-dir models/gemma-3-4b-it
-uv run openjev serve --backend torch --device auto --port 8000
+uv run jev_pakkio serve --backend torch --device auto --port 8000
 ```
 
 Accept the Gemma license on Hugging Face before downloading. You can also pass
@@ -53,9 +53,9 @@ PyTorch ROCm builds also use the `cuda` device name.
 
 ```sh
 uv run --no-sync python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-uv run --no-sync openjev serve --backend torch --device cuda --batch-size 2
-uv run --no-sync openjev check --backend torch --device cuda
-uv run --no-sync openjev score --backend torch --device cuda --context "The capital of France is" --option " Paris" --option " Berlin"
+uv run --no-sync jev_pakkio serve --backend torch --device cuda --batch-size 2
+uv run --no-sync jev_pakkio check --backend torch --device cuda
+uv run --no-sync jev_pakkio score --backend torch --device cuda --context "The capital of France is" --option " Paris" --option " Berlin"
 ```
 
 The base 4B weights need roughly 8 GB just for GPU model weights at 16-bit precision,
@@ -101,22 +101,22 @@ finds the metadata, tries to import it, and dies -- taking the torch backend dow
 
 ```sh
 # Rank options for one context (prints probability, score, raw sum, token count)
-.venv/bin/openjev score --context "The capital of France is" \
+.venv/bin/jev_pakkio score --context "The capital of France is" \
     --option " Paris" --option " Berlin" --option " Lyon"
 
 # Chat template (context as user turn, options scored as the reply) + PMI normalisation
-.venv/bin/openjev score --chat --norm pmi --context "..." --option "..." --option "..."
+.venv/bin/jev_pakkio score --chat --norm pmi --context "..." --option "..." --option "..."
 
 # Predefined options: one per line in a text file, reused for every context
-.venv/bin/openjev score --options-file options.txt --context "..."
-.venv/bin/openjev eval contexts.jsonl --fixed-options options.txt   # rows need only {"context": ...}; add "label" for accuracy
+.venv/bin/jev_pakkio score --options-file options.txt --context "..."
+.venv/bin/jev_pakkio eval contexts.jsonl --fixed-options options.txt   # rows need only {"context": ...}; add "label" for accuracy
 
 # Top-1 / top-3 accuracy on jevlike-style JSONL: {"context": ..., "options": [...], "label": 0}
-.venv/bin/openjev eval data.jsonl --norm mean
+.venv/bin/jev_pakkio eval data.jsonl --norm mean
 
 # Verify the cached batched path against naive re-encoding, and benchmark it
-.venv/bin/openjev check
-.venv/bin/openjev bench --context-tokens 200 --options 8 --option-tokens 30
+.venv/bin/jev_pakkio check
+.venv/bin/jev_pakkio bench --context-tokens 200 --options 8 --option-tokens 30
 ```
 
 ## Server
@@ -126,7 +126,7 @@ Metal, or on Linux/NVIDIA with `--backend torch` (see below); the MLX path has n
 because Linux containers cannot reach the Apple GPU.
 
 ```sh
-make serve                                     # = .venv/bin/openjev serve --port 8000
+make serve                                     # = .venv/bin/jev_pakkio serve --port 8000
 curl -s localhost:8000/score -H 'content-type: application/json' -d '{
   "context": "Customer: my order arrived broken. Agent:",
   "options": [" I am sorry, I will send a replacement.", " Please read our returns policy."],
@@ -175,7 +175,7 @@ approximation. `usage.output_tokens` counts the candidate-label tokens that were
 Comparison on the docs' quick-start request (`examples/systemone-quickstart.json`), Gemma 3 4B
 zero-shot vs the numbers TypeSafe publishes for Jev:
 
-| answer | Jev (docs) | openjev / Gemma 3 4B |
+| answer | Jev (docs) | jev_pakkio / Gemma 3 4B |
 |---|---|---|
 | `department.choice` | technical, p=0.84, confidence 0.60 | technical, p=1.00, confidence 1.00 |
 | `frustration.score` | 1.04 (annoyed but polite) | 2.00 (furious) |
@@ -193,14 +193,14 @@ make train       # jevlike's cross-attention head in MLX, listwise cross-entropy
 make eval-head   # top-1/top-3, ECE, and the shuffled-context control on the test split
 ```
 
-- `openjev features DATA --out F.npz` stops Gemma before the LM head, keeps every context token's
+- `jev_pakkio features DATA --out F.npz` stops Gemma before the LM head, keeps every context token's
   final hidden state and the masked-mean of each option's tokens (float16). Options are encoded on
   their own, as in jevlike, so the head has to do the matching. `--contextual` encodes them as
   continuations of the context instead: stronger features, but the match leaks into the option
   vectors and the shuffled-context control below stops meaning anything.
-- `openjev train` = AdamW 5e-4 (2e-3 diverges on Gemma features, whose norms are ~115), weight decay 1e-4, grad clip 1.0, 8 epochs, batch 64, best validation
+- `jev_pakkio train` = AdamW 5e-4 (2e-3 diverges on Gemma features, whose norms are ~115), weight decay 1e-4, grad clip 1.0, 8 epochs, batch 64, best validation
   epoch kept. The checkpoint is `head.safetensors` plus `head.json` (rank, hidden size, training config).
-- `openjev eval-head` reports what `jevlike-eval` reports: top-1, top-3, 10-bin expected calibration
+- `jev_pakkio eval-head` reports what `jevlike-eval` reports: top-1, top-3, 10-bin expected calibration
   error, and the same metrics with every example paired with another example's context. If the
   shuffled number does not collapse, the head is reading option priors rather than the state.
 
@@ -220,7 +220,7 @@ state, and its ECE of 0.03 is what a calibrated `confidence` looks like.
 Python:
 
 ```python
-from openjev import OptionScorer
+from jev_pakkio import OptionScorer
 s = OptionScorer("models/gemma-3-4b-it", batch_size=8)
 for r in s.score("The capital of France is", [" Paris", " Berlin"], norm="mean"):
     print(r.option, r.probability, r.logprob_sum, r.n_tokens)
@@ -247,15 +247,15 @@ all four city names as single tokens, so `mean` and `sum` agree and the trap nev
 
 Every command takes `--backend torch`, which swaps `mlx`/`mlx-lm` for `transformers`+`torch` and
 keeps the same design: prefill the context once, replicate its KV cache across the option batch,
-score in one padded forward pass. `openjev check` verifies that path against naive per-option
+score in one padded forward pass. `jev_pakkio check` verifies that path against naive per-option
 re-encoding on either backend. The server also reads `OPENJEV_BACKEND`.
 
 ```sh
-openjev score --backend torch --norm sum --model Qwen/Qwen2.5-1.5B-Instruct \
+jev_pakkio score --backend torch --norm sum --model Qwen/Qwen2.5-1.5B-Instruct \
     --context "The capital of France is" --option " Paris" --option " Berlin"
 
-openjev check  --backend torch --model Qwen/Qwen2.5-1.5B-Instruct   # cached vs naive
-openjev serve  --backend torch --model google/gemma-3-4b-it --quantize 4bit
+jev_pakkio check  --backend torch --model Qwen/Qwen2.5-1.5B-Instruct   # cached vs naive
+jev_pakkio serve  --backend torch --model google/gemma-3-4b-it --quantize 4bit
 ```
 
 ### Quantisation (`--quantize`)
@@ -288,7 +288,7 @@ in 4-bit on the same 4 GB card:
 | context cached once, options batched | 0.63 s |
 | context re-encoded per option, no cache | 4.25 s |
 
-`openjev check` compares log-probs with an absolute tolerance (`--tol`, default 0.5) that does not
+`jev_pakkio check` compares log-probs with an absolute tolerance (`--tol`, default 0.5) that does not
 scale with context length, so quantised runs over long contexts need `--tol 1.0` to pass on what is
 ordinary NF4 noise (0.4% relative).
 
@@ -312,9 +312,9 @@ classification (World/Sports/Business/Sci-Tech) on a 40-article held-out set
 | setup | accuracy | latency / article |
 |---|---|---|
 | Jev (cloud) | 87.5% (35/40) | 0.29 s |
-| openjev + LoRA, full GPU, shared-prefix cached scoring | 85.0% (34/40) | 0.47 s |
-| openjev + LoRA, full GPU, naive per-option re-encoding | 85.0% (34/40) | 1.43 s |
-| openjev + LoRA, CPU-offloaded (4 GB laptop GPU) | 85.0% (34/40) | 7.40 s |
+| jev_pakkio + LoRA, full GPU, shared-prefix cached scoring | 85.0% (34/40) | 0.47 s |
+| jev_pakkio + LoRA, full GPU, naive per-option re-encoding | 85.0% (34/40) | 1.43 s |
+| jev_pakkio + LoRA, CPU-offloaded (4 GB laptop GPU) | 85.0% (34/40) | 7.40 s |
 
 Accuracy is stable across every configuration — it was never an accuracy problem, purely
 latency/placement. Two things worth knowing if you're on a small card:
@@ -337,7 +337,7 @@ latency/placement. Two things worth knowing if you're on a small card:
 The naive approach re-encodes `context + option` from scratch for every option: with 4 categories,
 that's 4 full forward passes over the ~300-token article, each redoing the same context work three
 extra times. The shared-prefix version (this repo's actual `OptionScorer.score()`, reproduced below
-from `openjev/scorer_torch.py`) prefills the context **once**, then reuses that cached KV state for
+from `jev_pakkio/scorer_torch.py`) prefills the context **once**, then reuses that cached KV state for
 all 4 short option continuations in a single batched pass — the article is only ever encoded once,
 no matter how many options you're scoring:
 
@@ -410,7 +410,7 @@ CLIs read the same JSONL. Generate its synthetic menu set, then score it both wa
 
 ```sh
 .venv/bin/jevlike-data synthetic --output data/synthetic
-.venv/bin/openjev eval data/synthetic/test.jsonl --norm sum --sep $'\nChoice: '
+.venv/bin/jev_pakkio eval data/synthetic/test.jsonl --norm sum --sep $'\nChoice: '
 .venv/bin/jevlike-train data/synthetic/train.jsonl --validation data/synthetic/validation.jsonl \
     --output runs/synthetic-tiny.pt --device mps
 .venv/bin/jevlike-eval runs/synthetic-tiny.pt data/synthetic/test.jsonl --device mps
@@ -420,13 +420,13 @@ Results on the 400-row synthetic test set (2026-09-16):
 
 | scorer | training | top-1 | top-3 | median latency / example |
 |---|---|---|---|---|
-| openjev, Gemma 3 4B zero-shot, `--norm sum` | none | 1.000 | 1.000 | 0.086 s |
-| openjev, `--norm mean` | none | 0.988 | 1.000 | 0.086 s |
-| openjev, `--norm pmi` | none | 0.988 | 1.000 | 0.153 s |
+| jev_pakkio, Gemma 3 4B zero-shot, `--norm sum` | none | 1.000 | 1.000 | 0.086 s |
+| jev_pakkio, `--norm mean` | none | 0.988 | 1.000 | 0.086 s |
+| jev_pakkio, `--norm pmi` | none | 0.988 | 1.000 | 0.153 s |
 | jevlike tiny byte encoder + head | 2000 rows, 8 epochs | 0.998 | 1.000 | well under 10 ms |
 
 The synthetic task is easy for both. The real validation is your own labelled rows: run
-`openjev eval` on them zero-shot and compare against a `jevlike-train`/`jevlike-eval` run on the
+`jev_pakkio eval` on them zero-shot and compare against a `jevlike-train`/`jevlike-eval` run on the
 same split. If Gemma zero-shot is close to the trained head, Route B is enough; if not, train a head
 (Route A) with `make features && make train && make eval-head`.
 
@@ -436,15 +436,15 @@ See `finetune/README.md` for complete pipelines demonstrating how to fine-tune G
 
 ## Layout
 
-- `openjev/torch_backend.py`: PyTorch CPU/GPU inference and shared-prefix KV cache scoring.
-- `openjev/scorer.py`: `OptionScorer` (prefill, cache expansion, batched scoring, naive reference).
-- `openjev/systemone.py`: System One request/answer models, prompt renderers, zero-shot answers.
-- `openjev/server.py`: FastAPI app, `/health`, `/score`, `/v1/systemone`.
-- `openjev/features.py`: frozen-Gemma feature extraction and the `.npz` feature cache.
-- `openjev/head.py`: jevlike's cross-attention head in `mlx.nn`, save/load.
-- `openjev/train.py`: head training loop and evaluation (top-k, ECE, shuffled-context control).
-- `openjev/cli.py`: `openjev score | eval | bench | check | serve | features | train | eval-head`.
-- `openjev/{scorer,features,head,train}_torch.py`: the `--backend torch` counterparts of the four
+- `jev_pakkio/torch_backend.py`: PyTorch CPU/GPU inference and shared-prefix KV cache scoring.
+- `jev_pakkio/scorer.py`: `OptionScorer` (prefill, cache expansion, batched scoring, naive reference).
+- `jev_pakkio/systemone.py`: System One request/answer models, prompt renderers, zero-shot answers.
+- `jev_pakkio/server.py`: FastAPI app, `/health`, `/score`, `/v1/systemone`.
+- `jev_pakkio/features.py`: frozen-Gemma feature extraction and the `.npz` feature cache.
+- `jev_pakkio/head.py`: jevlike's cross-attention head in `mlx.nn`, save/load.
+- `jev_pakkio/train.py`: head training loop and evaluation (top-k, ECE, shuffled-context control).
+- `jev_pakkio/cli.py`: `jev_pakkio score | eval | bench | check | serve | features | train | eval-head`.
+- `jev_pakkio/{scorer,features,head,train}_torch.py`: the `--backend torch` counterparts of the four
   modules above (`transformers` + `torch`, bitsandbytes quantisation). `systemone.py`, `server.py`
   and `cli.py` are backend-agnostic and import a backend only when one is selected.
 - `demo/doom/`: Doom in the terminal, the server picks every action (`make doom`).

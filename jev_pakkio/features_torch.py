@@ -1,6 +1,6 @@
 """Frozen-Gemma feature extraction for the trainable head (Route A, PyTorch backend).
 
-Same contract as openjev/features.py but uses HuggingFace transformers + PyTorch
+Same contract as jev_pakkio/features.py but uses HuggingFace transformers + PyTorch
 instead of MLX. Loads the model with ``device_map="auto"`` in ``bfloat16``,
 runs inference under ``torch.no_grad()``, and saves the extracted hidden states
 as numpy arrays in ``.npz`` files.

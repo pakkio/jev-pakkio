@@ -1,4 +1,4 @@
-"""openjev: one-pass option scoring with a local Gemma model (MLX on Apple silicon, torch elsewhere)."""
+"""jev_pakkio: one-pass option scoring with a local Gemma model (MLX on Apple silicon, torch elsewhere)."""
 
 __all__ = ["DEFAULT_MODEL", "OptionScore", "OptionScorer"]
 

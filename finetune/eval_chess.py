@@ -1,7 +1,7 @@
 """Evaluate next-move prediction on the held-out Lichess puzzle split.
 
 Two modes:
-  rank     -- score every legal move as an option with openjev's OptionScorer
+  rank     -- score every legal move as an option with jev_pakkio's OptionScorer
               (the same one-pass ranking the server uses) and report top-1 /
               top-3 accuracy against the puzzle solution.
   generate -- greedy-decode a move and check it is (a) legal and (b) correct.
@@ -19,7 +19,7 @@ import json
 import sys
 import time
 
-from openjev.scorer import OptionScorer, iter_jsonl
+from jev_pakkio.scorer import OptionScorer, iter_jsonl
 
 
 def legal_moves_from_prompt(prompt: str) -> list[str]:

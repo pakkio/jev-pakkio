@@ -1,4 +1,4 @@
-# openjev: one-pass option scoring with Gemma 3 4B via MLX. Native macOS only (Metal).
+# jev_pakkio: one-pass option scoring with Gemma 3 4B via MLX. Native macOS only (Metal).
 VENV   := .venv
 BIN    := $(VENV)/bin
 MODEL  ?= models/gemma-3-4b-it
@@ -35,7 +35,7 @@ model: ## download $(HF_REPO) into $(MODEL) if missing
 	@test -f $(MODEL)/config.json || hf download $(HF_REPO) --local-dir $(MODEL)
 
 serve: ## run the HTTP server (loads the model once; POST /score, POST /v1/systemone, GET /health)
-	$(BIN)/openjev serve --host $(HOST) --port $(PORT) --model $(MODEL)
+	$(BIN)/jev_pakkio serve --host $(HOST) --port $(PORT) --model $(MODEL)
 
 health: ## curl the running server's health endpoint
 	@curl -s $(HOST):$(PORT)/health; echo
@@ -50,35 +50,35 @@ systemone: ## TypeSafe quickstart example (choice + score + noul) against the ru
 	@curl -s $(HOST):$(PORT)/v1/systemone -H 'Authorization: Bearer $(API_KEY)' -H 'Content-Type: application/json' -d @examples/systemone-quickstart.json; echo
 
 score: ## one-off CLI scoring, e.g. make score CONTEXT="..." OPTIONS="--option a --option b"
-	$(BIN)/openjev score --model $(MODEL) --norm $(NORM) --context "$(CONTEXT)" $(OPTIONS)
+	$(BIN)/jev_pakkio score --model $(MODEL) --norm $(NORM) --context "$(CONTEXT)" $(OPTIONS)
 
 check: ## verify prefix-cached batched scores match naive re-encoding
-	$(BIN)/openjev check --model $(MODEL)
+	$(BIN)/jev_pakkio check --model $(MODEL)
 
 bench: ## latency: cached+batched vs naive, 200-token context x 8 options
-	$(BIN)/openjev bench --model $(MODEL)
+	$(BIN)/jev_pakkio bench --model $(MODEL)
 
 eval: ## zero-shot top-k accuracy on jevlike-style JSONL ($(DATA))
-	$(BIN)/openjev eval $(DATA) --model $(MODEL) --norm $(NORM)
+	$(BIN)/jev_pakkio eval $(DATA) --model $(MODEL) --norm $(NORM)
 
 features: ## cache frozen-Gemma features for $(DATA_DIR)/{train,validation,test}.jsonl into $(FEATS)/
 	@for split in train validation test; do \
-	  $(BIN)/openjev features $(DATA_DIR)/$$split.jsonl --out $(FEATS)/$$split.npz --model $(MODEL) --sep "$$(printf '$(SEP)')"; \
+	  $(BIN)/jev_pakkio features $(DATA_DIR)/$$split.jsonl --out $(FEATS)/$$split.npz --model $(MODEL) --sep "$$(printf '$(SEP)')"; \
 	done
 
 train: ## train the attention head on $(FEATS)/train.npz, validate on $(FEATS)/validation.npz -> $(HEAD)
-	$(BIN)/openjev train $(FEATS)/train.npz --validation $(FEATS)/validation.npz --out $(HEAD)
+	$(BIN)/jev_pakkio train $(FEATS)/train.npz --validation $(FEATS)/validation.npz --out $(HEAD)
 
 eval-head: ## top-k, ECE and shuffled-context control of $(HEAD) on $(FEATS)/test.npz
-	$(BIN)/openjev eval-head $(HEAD) $(FEATS)/test.npz
+	$(BIN)/jev_pakkio eval-head $(HEAD) $(FEATS)/test.npz
 
 lora: ## QLoRA-tune $(LORA_MODEL) as a scorer on $(LORA_DATA)/{train,validation,test}.jsonl -> $(LORA)/ (torch + CUDA)
-	PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $(BIN)/openjev lora $(LORA_DATA)/train.jsonl \
+	PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $(BIN)/jev_pakkio lora $(LORA_DATA)/train.jsonl \
 	  --validation $(LORA_DATA)/validation.jsonl --test $(LORA_DATA)/test.jsonl \
 	  --model $(LORA_MODEL) --epochs 2 --eval-every 500 --out $(LORA)
 
 clean: ## remove caches and run artefacts (keeps the venv and model)
-	rm -rf runs __pycache__ openjev/__pycache__
+	rm -rf runs __pycache__ jev_pakkio/__pycache__
 
 # --- chess next-move fine-tune (see finetune/README.md) ---
 ADAPTER ?= adapters/chess-lora

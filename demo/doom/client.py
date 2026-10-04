@@ -1,4 +1,4 @@
-"""Tiny HTTP client for the openjev server. Standard library only."""
+"""Tiny HTTP client for the jev_pakkio server. Standard library only."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ class Client:
         except urllib.error.URLError as e:
             raise ServerDown(f"cannot reach {self.url}: {e.reason}") from None
 
-    # -- /score: plain context + options, the native openjev endpoint -------------------
+    # -- /score: plain context + options, the native jev_pakkio endpoint -------------------
     def decide_score(self, context: str, actions: list[str]) -> Decision:
         # Options carry their own leading space: a " " separator would become a lone space token,
         # which the tokenizer never produces mid-sentence and the model scores as garbage.

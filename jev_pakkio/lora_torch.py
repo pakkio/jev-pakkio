@@ -287,7 +287,7 @@ def train(model_path: str, train_path: str, val_path: str, out: str, test_path: 
         result["test_shuffled_context"] = evaluate(model, te, pad_id, device, shuffle_context=True)
         print(json.dumps({"test": result["test"], "test_shuffled_context": result["test_shuffled_context"]}), flush=True)
     Path(out).mkdir(parents=True, exist_ok=True)
-    (Path(out) / "openjev_lora.json").write_text(json.dumps(result, indent=2))
+    (Path(out) / "jev_pakkio_lora.json").write_text(json.dumps(result, indent=2))
     return result
 
 

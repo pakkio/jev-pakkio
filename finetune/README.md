@@ -4,7 +4,7 @@ A small LoRA fine-tune that teaches the local `models/gemma-3-4b-it` to
 predict the best next move from a board state. Data comes from
 [Lichess/chess-puzzles](https://huggingface.co/datasets/Lichess/chess-puzzles)
 (CC0), training runs on Apple silicon with `mlx_lm.lora`, and evaluation uses
-openjev's own `OptionScorer` to rank every legal move in one pass.
+jev_pakkio's own `OptionScorer` to rank every legal move in one pass.
 
 ```sh
 uv sync --extra finetune   # python-chess + pyarrow
@@ -40,7 +40,7 @@ Best move:
 completion: ` g6g2`
 
 The legal-move list is included on purpose: it turns the task into the same
-"pick one of these options" shape openjev scores, and it lets the model
+"pick one of these options" shape jev_pakkio scores, and it lets the model
 output a legal move string rather than inventing one.
 
 ## Training

@@ -1,10 +1,10 @@
 """
-openjev classification on bbc_test.jsonl, torch backend on CUDA, with the
+jev_pakkio classification on bbc_test.jsonl, torch backend on CUDA, with the
 fine-tuned news-lora-2b adapter (scorer_torch.OptionScorer now supports
 adapter_path after the fix in this session).
 """
 import json, time
-from openjev.scorer_torch import OptionScorer
+from jev_pakkio.scorer_torch import OptionScorer
 
 CATEGORIES = ["World", "Sports", "Business", "Sci/Tech"]
 
@@ -25,8 +25,8 @@ for ex in examples:
                      "probs": {s.option.strip(): s.probability for s in scores}})
 total = time.time() - t0
 
-print(f"openjev (gemma-2-2b-it + news-lora-2b/checkpoint-300, torch/cuda): {correct}/{len(examples)} = {correct/len(examples):.1%} accuracy")
+print(f"jev_pakkio (gemma-2-2b-it + news-lora-2b/checkpoint-300, torch/cuda): {correct}/{len(examples)} = {correct/len(examples):.1%} accuracy")
 print(f"Total time: {total:.1f}s ({total/len(examples):.2f}s/article)")
 
-with open("bbc_openjev_lora_results.json", "w") as f:
+with open("bbc_jev_pakkio_lora_results.json", "w") as f:
     json.dump({"accuracy": correct/len(examples), "total_s": total, "per_article_s": total/len(examples), "results": results}, f, indent=2)

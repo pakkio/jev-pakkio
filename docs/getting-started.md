@@ -16,7 +16,7 @@ From the repository root, these commands work in PowerShell and Linux shells:
 uv sync
 uv run hf auth login
 uv run hf download google/gemma-3-4b-it --local-dir models/gemma-3-4b-it
-uv run openjev serve --backend torch --device auto --port 8000
+uv run jev_pakkio serve --backend torch --device auto --port 8000
 ```
 
 Accept Google's Gemma license on Hugging Face before downloading. You can instead
@@ -32,8 +32,8 @@ with `uv pip install`. Use `uv run --no-sync` afterward to preserve that build.
 
 ```sh
 uv run --no-sync python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-uv run --no-sync openjev serve --backend torch --device cuda --batch-size 2
-uv run --no-sync openjev check --backend torch --device cuda
+uv run --no-sync jev_pakkio serve --backend torch --device cuda --batch-size 2
+uv run --no-sync jev_pakkio check --backend torch --device cuda
 ```
 
 `--device auto` chooses CUDA, then MPS, then CPU according to availability.
@@ -49,9 +49,9 @@ Face weights; MLX quantized checkpoints and MLX LoRA adapters are unsupported.
 ### Score and verify
 
 ```sh
-uv run openjev score --context "The capital of France is" --option " Paris" --option " Berlin"
-uv run openjev check
-uv run openjev bench
+uv run jev_pakkio score --context "The capital of France is" --option " Paris" --option " Berlin"
+uv run jev_pakkio check
+uv run jev_pakkio bench
 ```
 
 Use `uv run --no-sync` in these examples if you installed a custom GPU build.
@@ -94,7 +94,7 @@ make setup MODEL=models/my-gemma HF_REPO=google/gemma-3-4b-it
 Rank three options for one context:
 
 ```sh
-.venv/bin/openjev score --context "The capital of France is" \
+.venv/bin/jev_pakkio score --context "The capital of France is" \
     --option " Paris" --option " Berlin" --option " Lyon"
 ```
 
@@ -113,7 +113,7 @@ make bench       # latency benchmark
 ## Run the server
 
 ```sh
-make serve       # = .venv/bin/openjev serve --host 127.0.0.1 --port 8000 --model models/gemma-3-4b-it
+make serve       # = .venv/bin/jev_pakkio serve --host 127.0.0.1 --port 8000 --model models/gemma-3-4b-it
 ```
 
 In another terminal:

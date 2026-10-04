@@ -1,6 +1,6 @@
-# Jev, jevlike, and openjev: research report
+# Jev, jevlike, and jev_pakkio: research report
 
-Date: 2026-09-20. Scope: TypeSafe AI's commercial Jev model and "System One" API, the open-source jevlike starter that copies its input/output shape, the small ecosystem that grew around jevlike in the past week, and how openjev (this repo) sits relative to both. Sources are listed at the end of each part.
+Date: 2026-09-20. Scope: TypeSafe AI's commercial Jev model and "System One" API, the open-source jevlike starter that copies its input/output shape, the small ecosystem that grew around jevlike in the past week, and how jev_pakkio (this repo) sits relative to both. Sources are listed at the end of each part.
 
 ## Executive summary
 
@@ -9,7 +9,7 @@ Date: 2026-09-20. Scope: TypeSafe AI's commercial Jev model and "System One" API
 - **Claimed numbers:** 70 to 500 ms end to end, $0.042 per million input tokens with free output tokens, and homepage figures of 193.6x faster and 444.6x cheaper than frontier LLMs on TypeSafe's own workflow evals. Those evals use an average of GPT-6 Astra and Fable 5.1 as the reference answer, so they should be read as vendor benchmarks.
 - **jevlike (vinnylarouge, "Minimal Labs") is an independent MIT starter**, not a reproduction. It is a three-commit, one-author repo created 2026-09-16 that hit about 1,065 stars and a 166-point Hacker News thread in four days. Its core is a single cross-attention head: each option becomes a query over context tokens, a dot product gives one logit per option, and a softmax across options gives probabilities. The default byte-level model has 41,280 parameters and truncates context to 192 bytes and options to 32 bytes.
 - **The ecosystem is one week old.** jevbetter adds hashed n-gram encoding, rival-aware attention, a gated head, and temperature scaling and reports 0.916 versus 0.873 top-1 against the jevlike baseline. jevlike-esp32 exports float32 weights and reimplements inference in C for a microcontroller. JevLikeDiffusionGemma shares only the name. omo-jevlike-router is an archived skill-routing experiment.
-- **openjev takes the opposite bet:** keep a pretrained 4B backbone (Gemma 3) and score options with one cached forward pass, either zero-shot from token log-probs or with jevlike's head retrained on frozen Gemma features. Zero-shot reaches 1.000 top-1 on the synthetic menus at about 90 ms per request, versus well under 10 ms for jevlike's tiny model. openjev also serves TypeSafe's System One request contract locally.
+- **jev_pakkio takes the opposite bet:** keep a pretrained 4B backbone (Gemma 3) and score options with one cached forward pass, either zero-shot from token log-probs or with jevlike's head retrained on frozen Gemma features. Zero-shot reaches 1.000 top-1 on the synthetic menus at about 90 ms per request, versus well under 10 ms for jevlike's tiny model. jev_pakkio also serves TypeSafe's System One request contract locally.
 
 ---
 
@@ -97,7 +97,7 @@ Eval methodology: four code-defined workflows (security incidents 240 cases, age
 - **Joint encoding with per-option heads.** The most consistent reading of "parallel sampler", no output tokens, per-question independence, and a hard 255-option cap is a single non-autoregressive forward pass over `state` plus each question's options, with a scalar logit per option and a softmax per question (Bernoulli sigmoid for noul, ordinal softmax for score). The 255 cap smells like a `uint8` option index or a fixed-width label slot in the sampler. HN's largest camp (quotemstr, txhwind, Vetch, several GLiNER/DeBERTa proponents) argues for an encoder-only or cross-encoder transformer with classification/regression heads; the "two-stage scoring then explicit choice" for large option sets is exactly what a late-interaction/bi-encoder prefilter plus a cross-encoder rerank would look like.
 - **Size.** paraschopra estimates ~3B parameters from the $42/BTok price; Almeida only says "not small". The 70 ms floor is consistent with a few-billion-parameter encoder on a single GPU without decoding.
 - **Diffusion hypothesis.** The org's LLaDA and vLLM forks, and a community vLLM PR turning DiffusionGemma into a Jev clone, fuel a masked-diffusion-LM theory (bigglebear, brausepulver, mmastrac). Counter-evidence from cmrdporcupine: a plain KV-shared autoregressive Gemma answered a first question in ~170 ms and each extra question in ~33 ms, faster than the diffusion clone, so diffusion is not needed to explain the latency.
-- **Single-token logprob baseline.** Several open replications (TheoLeeCJ/openjev, ekzhang/openjev-sglang) emit one token per question and read logprobs; paraschopra bets Jev's probabilities correlate with LLM logprobs. lhk931122 notes constrained decoding renormalises over allowed tokens only, which is why raw logprob classifiers are poorly calibrated and why a dedicated calibration objective (RLCD) would matter.
+- **Single-token logprob baseline.** Several open replications (TheoLeeCJ/jev_pakkio, ekzhang/jev_pakkio-sglang) emit one token per question and read logprobs; paraschopra bets Jev's probabilities correlate with LLM logprobs. lhk931122 notes constrained decoding renormalises over allowed tokens only, which is why raw logprob classifiers are poorly calibrated and why a dedicated calibration objective (RLCD) would matter.
 - **RLCD guess.** Likely RL or distillation against strictly proper scoring rules (log/Brier) on synthetic decision data, possibly with logprob distillation from a larger teacher (paraschopra); Laya's arXiv 2510.01237 describes a similar ModernBERT policy with proper-scoring-rule rewards. Nobody outside TypeSafe knows what RLCD actually is.
 - **Consensus on novelty.** Even skeptics (ramon156, jacobgold, zmmmmm on the Astra/Fable reference) mostly agree the product novelty is zero-shot, zero-training, calibrated probabilities over a fixed decision set at $42/BTok, i.e. a "generalised classifier" rather than a generalised token predictor.
 
@@ -280,24 +280,24 @@ Three commits, one author, no releases or tags, no maintainer replies on 3 issue
 
 ---
 
-# Part 3: openjev
+# Part 3: jev_pakkio
 
 
-openjev (daseinlabs/open-jev) targets the same task on a different substrate. Instead of a small scorer trained from scratch, it runs `google/gemma-3-4b-it` in bf16 through mlx-lm on Apple silicon. The context is prefilled once, the KV cache is expanded across the option batch, and every option is scored in one padded forward pass with no decoding. The score is the log-probability of the option tokens given the context; a softmax over option scores gives a per-option probability, exactly the output shape of `jevlike-predict` and of Jev's `choice` question.
+jev_pakkio (daseinlabs/open-jev) targets the same task on a different substrate. Instead of a small scorer trained from scratch, it runs `google/gemma-3-4b-it` in bf16 through mlx-lm on Apple silicon. The context is prefilled once, the KV cache is expanded across the option batch, and every option is scored in one padded forward pass with no decoding. The score is the log-probability of the option tokens given the context; a softmax over option scores gives a per-option probability, exactly the output shape of `jevlike-predict` and of Jev's `choice` question.
 
 ### What it replicates from jevlike
 
-| Piece | jevlike | openjev |
+| Piece | jevlike | jev_pakkio |
 |---|---|---|
 | Data format | JSONL `{context, options, label}` | identical, shares `jevlike-data synthetic` output |
-| CLI | `jevlike-data / train / eval / predict` | `openjev score / eval / bench / check / serve / features / train / eval-head` |
+| CLI | `jevlike-data / train / eval / predict` | `jev_pakkio score / eval / bench / check / serve / features / train / eval-head` |
 | Eval battery | top-1, top-3, 10-bin ECE, shuffled-context control | same four numbers |
-| Scorer head | `AttentionHead` (cross-attention, one query per option) | ported to MLX in `openjev/head.py`, trained on frozen Gemma features |
+| Scorer head | `AttentionHead` (cross-attention, one query per option) | ported to MLX in `jev_pakkio/head.py`, trained on frozen Gemma features |
 | Encoder | byte embeddings from scratch, or frozen Qwen2.5-0.5B | frozen Gemma 3 4B hidden states (or zero-shot log-prob, no head at all) |
 
 ### Two routes
 
-- **Route A: train a head on frozen Gemma features.** `openjev features` stops Gemma before the LM head and keeps every context token's final hidden state plus a masked mean of each option's tokens (options encoded independently, as in jevlike, so the head must do the matching). Training: AdamW at 5e-4 (2e-3 diverges; Gemma feature norms are around 115), weight decay 1e-4, grad clip 1.0, 8 epochs, batch 64, listwise cross-entropy.
+- **Route A: train a head on frozen Gemma features.** `jev_pakkio features` stops Gemma before the LM head and keeps every context token's final hidden state plus a masked mean of each option's tokens (options encoded independently, as in jevlike, so the head must do the matching). Training: AdamW at 5e-4 (2e-3 diverges; Gemma feature norms are around 115), weight decay 1e-4, grad clip 1.0, 8 epochs, batch 64, listwise cross-entropy.
 - **Route B: Gemma zero-shot.** No training. Normalisation modes: `mean` (default), `sum`, and `pmi` (subtract the option's unconditional log-prob at the cost of one extra batched pass).
 
 ### Measured numbers (synthetic split 2000/400/400, 2026-09-17)
@@ -313,7 +313,7 @@ Latency on an M5 Pro (64 GB), 202-token context, 8 options: 0.17 s median with t
 
 ### System One compatibility
 
-The FastAPI server exposes `/health`, `/score`, and `/v1/systemone`, the last one accepting TypeSafe's request contract (`state` plus a `questions` map with `choice`, `score`, and `noul` types) with optional bearer auth via `OPENJEV_API_KEY`. On the docs quick-start request, Jev returns `department.choice = technical` at p=0.84 with confidence 0.60, `frustration.score = 1.04`, and `is_urgent.noul = 0.999`. openjev with Gemma 3 4B returns technical at p=1.00 with confidence 1.00, frustration 2.00, and is_urgent 0.005. Same routing decision, but the zero-shot backbone is over-confident and disagrees on the judgement calls. openjev computes `confidence` as one minus normalised entropy; TypeSafe does not publish its formula.
+The FastAPI server exposes `/health`, `/score`, and `/v1/systemone`, the last one accepting TypeSafe's request contract (`state` plus a `questions` map with `choice`, `score`, and `noul` types) with optional bearer auth via `OPENJEV_API_KEY`. On the docs quick-start request, Jev returns `department.choice = technical` at p=0.84 with confidence 0.60, `frustration.score = 1.04`, and `is_urgent.noul = 0.999`. jev_pakkio with Gemma 3 4B returns technical at p=1.00 with confidence 1.00, frustration 2.00, and is_urgent 0.005. Same routing decision, but the zero-shot backbone is over-confident and disagrees on the judgement calls. jev_pakkio computes `confidence` as one minus normalised entropy; TypeSafe does not publish its formula.
 
 ### Where the repo currently stands
 

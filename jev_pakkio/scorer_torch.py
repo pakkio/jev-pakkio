@@ -13,12 +13,73 @@ from typing import Iterable, Sequence
 
 import torch
 import torch.nn.functional as F
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, DynamicCache
+from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig,
+                          DynamicCache)
 
 
-DEFAULT_MODEL = "google/gemma-3-4b-it"
+DEFAULT_MODEL = "google/gemma-4-E2B-it"
 NORMS = ("mean", "sum", "pmi")
 QUANTIZATIONS = ("none", "8bit", "4bit")
+
+# Pick a model that fits the card it is standing on. A 4-bit Gemma 4 E2B needs
+# ~3.2GB, so an 8GB card takes it; below that Qwen 2B (4-bit, ~1.5GB) is the
+# smallest thing that still reads natural text well. Override with --model.
+VRAM_TIERS = (
+    (6 * 1024**3, "google/gemma-4-E2B-it"),
+    (3 * 1024**3, "Qwen/Qwen2.5-1.5B-Instruct"),
+)
+SMALL_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
+
+
+def auto_model(vram_bytes: int | None = None) -> str:
+    """The largest model in VRAM_TIERS that fits, else the smallest listed."""
+    if vram_bytes is None:
+        if not torch.cuda.is_available():
+            return SMALL_MODEL
+        vram_bytes = torch.cuda.get_device_properties(0).total_memory
+    for needed, repo in VRAM_TIERS:
+        if vram_bytes >= needed:
+            return repo
+    return SMALL_MODEL
+
+# Gemma 4 E-series keeps a per-layer embedding table (~2.8B params in E4B) that
+# bitsandbytes cannot quantise. Left on the GPU it does not fit a small card, so
+# it stays on the CPU and only the looked-up rows are moved -- same trick the LoRA
+# path uses (lora_torch.load_model). Without this, `score --model gemma-4-*`
+# tries to allocate the whole table and OOMs.
+CPU_MODULES = ("audio_tower", "vision_tower", "embed_vision", "embed_audio")
+
+
+def is_gemma4_per_layer(cfg) -> bool:
+    """True for Gemma 4 E-series configs, which have the per-layer embedding table."""
+    text = getattr(cfg, "text_config", cfg)
+    return bool(getattr(text, "hidden_size_per_layer_input", 0))
+
+
+def gemma4_device_map(cfg, quantize: str | None, device: str, on_gpu: bool) -> str | dict:
+    """Placement for a Gemma 4 E-series model: table on CPU, layers on GPU 0."""
+    lm = "model.language_model"
+    device_map = {f"{lm}.{k}": 0 for k in ("embed_tokens", "layers", "norm", "rotary_emb",
+                                           "per_layer_model_projection", "per_layer_projection_norm")}
+    device_map["lm_head"] = 0
+    device_map[f"{lm}.embed_tokens_per_layer"] = "cpu"
+    device_map.update({f"model.{m}": "cpu" for m in CPU_MODULES})
+    return device_map
+
+
+def cpu_embedding_lookup(model) -> None:
+    """Run the per-layer embedding lookup on the CPU and move only the rows.
+
+    accelerate's offload hook would stream the whole table to the GPU on every
+    call; patching forward keeps the lookup on the CPU.
+    """
+    from accelerate.hooks import remove_hook_from_module
+
+    table = model.model.language_model.embed_tokens_per_layer
+    remove_hook_from_module(table)
+    table.to("cpu")
+    fwd = table.forward
+    table.forward = lambda ids, _f=fwd: _f(ids.to("cpu")).to("cuda")
 
 
 def quantization_config(quantize: str | None) -> BitsAndBytesConfig | None:
@@ -41,6 +102,66 @@ def quantization_config(quantize: str | None) -> BitsAndBytesConfig | None:
             bnb_4bit_compute_dtype=torch.bfloat16,
         )
     raise ValueError(f"quantize must be one of {QUANTIZATIONS}")
+
+
+def gemma4_cpu_module_map(cfg) -> dict:
+    """Placement for a Gemma 4 E-series model that fits a small card.
+
+    Every submodule is named explicitly. A catch-all entry makes accelerate infer
+    placement for the weights it does not recognise -- including the 2.35B-param
+    per-layer embedding table it then tries to move to the GPU. Listing the
+    language model's parts individually is what keeps that table on the CPU.
+
+    This mirrors lora_torch.load_model, which is the path already known to load
+    these models on an 8GB card.
+    """
+    lm = "model.language_model"
+    device_map = {f"{lm}.{k}": 0 for k in ("embed_tokens", "layers", "norm", "rotary_emb",
+                                           "per_layer_model_projection", "per_layer_projection_norm")}
+    device_map["lm_head"] = 0
+    device_map[f"{lm}.embed_tokens_per_layer"] = "cpu"
+    device_map.update({f"model.{m}": "cpu" for m in CPU_MODULES})
+    return device_map
+
+
+def patch_cpu_embedding_lookup(model) -> None:
+    """Replace accelerate's offload hook with a CPU lookup that moves only rows.
+
+    accelerate's hook would stream the whole table to the GPU on every call.
+    `table.to("cpu")` is what actually materialises the weights: removing the
+    hook alone leaves them on the meta device and the forward pass then fails
+    with "Cannot copy out of meta tensor". Same sequence as lora_torch.
+    """
+    from accelerate.hooks import remove_hook_from_module
+
+    table = model.model.language_model.embed_tokens_per_layer
+    remove_hook_from_module(table)
+    table.to("cpu")
+    fwd = table.forward
+    table.forward = lambda ids, _f=fwd: _f(ids.to("cpu")).to("cuda")
+
+
+def load_gemma4_cpu_embeddings(model_path: str, quantize: str | None, device: str):
+    """Load a Gemma 4 E-series model with its embedding tables on the CPU.
+
+    bitsandbytes refuses to mix a 4-bit quantiser with any CPU-dispatched module,
+    so for these models the body is loaded in bf16 instead of 4-bit: ~3.9GB on the
+    GPU for E2B, against ~4.7GB of tables kept off it. Falls back to the ordinary
+    single-device load when there is no CUDA or the model is not a PLE one.
+    """
+    cfg = AutoConfig.from_pretrained(model_path)
+    if not torch.cuda.is_available() or not is_gemma4_per_layer(cfg):
+        return AutoModelForCausalLM.from_pretrained(
+            model_path, dtype=torch.bfloat16,
+            device_map=_device_map(quantize, device),
+            quantization_config=quantization_config(quantize),
+        )
+    device_map = gemma4_cpu_module_map(cfg)
+    model = AutoModelForCausalLM.from_pretrained(model_path, dtype=torch.bfloat16,
+                                                 device_map=device_map)
+    patch_cpu_embedding_lookup(model)
+    model.config.use_cache = False
+    return model
 
 
 @dataclass(frozen=True)
@@ -83,18 +204,28 @@ def _repeat_kv(kv: list[tuple[torch.Tensor, torch.Tensor]], n: int) -> DynamicCa
     )
 
 
-def _device_map(quantize: str | None) -> str | dict:
+def _device_map(quantize: str | None, device: str = "auto") -> str | dict:
     """Placement for from_pretrained.
 
-    bitsandbytes cannot run a quantised module that accelerate parked on the
-    CPU, and "auto" keeps a safety margin that makes it offload on a small
-    card -- on a 4GB GPU a 4-bit Gemma 3 4B needs ~3.1GB and fits, but only if
-    it is pinned. Pin the whole model to GPU 0 when quantising; fall back to
-    "auto" without CUDA or without quantisation.
+    An explicit --device wins. Otherwise: bitsandbytes cannot run a quantised
+    module that accelerate parked on the CPU, and "auto" keeps a safety margin
+    that makes it offload on a small card -- on a 4GB GPU a 4-bit Gemma 3 4B
+    needs ~3.1GB and fits, but only if it is pinned. Pin the whole model to GPU
+    0 when quantising; fall back to "auto" without CUDA or without
+    quantisation.
     """
+    if device and device != "auto":
+        return device if ":" in device or device == "cpu" else {"": device}
     if quantize and quantize != "none" and torch.cuda.is_available():
         return {"": 0}
     return "auto"
+
+
+def _resolve_device(device: str = "auto") -> str:
+    """The device the weights actually ended up on, for /health and errors."""
+    if device and device != "auto":
+        return device
+    return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class OptionScorer:
@@ -106,16 +237,14 @@ class OptionScorer:
         sep: str = "",
         quantize: str | None = None,
         adapter_path: str | None = None,
+        device: str = "auto",
     ) -> None:
         self.model_path = model_path
         self.quantize = quantize or "none"
+        self.backend = "torch"
+        self.device = _resolve_device(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            dtype=torch.bfloat16,
-            device_map=_device_map(quantize),
-            quantization_config=quantization_config(quantize),
-        )
+        self.model = load_gemma4_cpu_embeddings(model_path, quantize, device)
         if adapter_path:
             from peft import PeftModel
 
@@ -174,7 +303,7 @@ class OptionScorer:
     # --------------------------------------------------------------- prefill
     def _prefill(self, ids: list[int]):
         """Prefill the context, return (kv tensors, last context logits)."""
-        input_ids = torch.tensor([ids], dtype=torch.long, device=self.model.device)
+        input_ids = torch.tensor([ids], dtype=torch.long, device=self.device)
         with torch.no_grad():
             outputs = self.model(input_ids, use_cache=True)
         return _cache_tensors(outputs.past_key_values), outputs.logits[0, -1].float()
@@ -193,8 +322,8 @@ class OptionScorer:
             L = max(len(x) for x in chunk)
 
             # Build padded tensor
-            arr = torch.full((n, L), self.pad_id, dtype=torch.long, device=self.model.device)
-            mask = torch.zeros((n, L), dtype=torch.float32, device=self.model.device)
+            arr = torch.full((n, L), self.pad_id, dtype=torch.long, device=self.device)
+            mask = torch.zeros((n, L), dtype=torch.float32, device=self.device)
             for i, x in enumerate(chunk):
                 arr[i, : len(x)] = torch.tensor(x, dtype=torch.long)
                 mask[i, : len(x)] = 1.0
@@ -293,13 +422,13 @@ class OptionScorer:
         for o in options:
             oid = self.option_ids(o)
             ids = ctx + oid
-            input_ids = torch.tensor([ids], dtype=torch.long, device=self.model.device)
+            input_ids = torch.tensor([ids], dtype=torch.long, device=self.device)
             with torch.no_grad():
                 outputs = self.model(input_ids)
             logits = outputs.logits[0].float()
             pred = logits[len(ctx) - 1 : len(ctx) - 1 + len(oid)]
             lp = F.log_softmax(pred, dim=-1)
-            target = torch.tensor(oid, dtype=torch.long, device=self.model.device).unsqueeze(-1)
+            target = torch.tensor(oid, dtype=torch.long, device=self.device).unsqueeze(-1)
             s = lp.gather(-1, target).sum()
             out.append(s.cpu().item())
         return out

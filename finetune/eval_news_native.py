@@ -6,7 +6,7 @@ distribution is available later for a probabilities-as-features comparison.
 
 ECE bins on `probabilities[choice]` -- the model's own probability for the
 class it picked -- not on the `confidence` field. Jev's `confidence` is a
-separate distribution-concentration measure (openjev/systemone.py computes
+separate distribution-concentration measure (jev_pakkio/systemone.py computes
 it as 1 - normalised entropy; TypeSafe's docs give `(n*max_p-1)/(n-1)`), and
 the two disagree in general: the worked example in the main README shows
 `p=0.84, confidence=0.60` for the same answer. Binning ECE on `confidence`

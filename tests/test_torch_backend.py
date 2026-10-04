@@ -5,8 +5,8 @@ import unittest
 import torch
 from transformers import Gemma3TextConfig, Gemma3ForCausalLM
 
-from openjev.scorer import OptionScorer
-from openjev.torch_backend import TorchBackend
+from jev_pakkio.scorer import OptionScorer
+from jev_pakkio.torch_backend import TorchBackend
 
 
 class Tokenizer:

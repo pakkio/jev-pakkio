@@ -7,52 +7,52 @@ selection uses MLX on Apple silicon and PyTorch elsewhere. For PyTorch, automati
 device selection prefers CUDA, then MPS, then CPU.
 
 ```python
-from openjev import OptionScorer
+from jev_pakkio import OptionScorer
 
 scorer = OptionScorer("google/gemma-3-4b-it", backend="torch", device="cuda", batch_size=2)
 results = scorer.score("The capital of France is", [" Paris", " Berlin"])
 ```
 
 Use `device="cpu"` for CPU inference. The server uses the same options:
-`uv run openjev serve --backend torch --device auto`. Both `/score` and
+`uv run jev_pakkio serve --backend torch --device auto`. Both `/score` and
 `/v1/systemone` retain the same request and response contracts across backends.
 See [Getting started](getting-started.md) for GPU installation instructions.
 
 
-The `openjev` package. `OptionScorer` is re-exported from the top level:
+The `jev_pakkio` package. `OptionScorer` is re-exported from the top level:
 
 ```python
-from openjev import OptionScorer
+from jev_pakkio import OptionScorer
 ```
 
-## `openjev`
+## `jev_pakkio`
 
-::: openjev
+::: jev_pakkio
 
-## `openjev.scorer`
+## `jev_pakkio.scorer`
 
-::: openjev.scorer
+::: jev_pakkio.scorer
 
-## `openjev.systemone`
+## `jev_pakkio.systemone`
 
-::: openjev.systemone
+::: jev_pakkio.systemone
 
-## `openjev.server`
+## `jev_pakkio.server`
 
-::: openjev.server
+::: jev_pakkio.server
 
-## `openjev.features`
+## `jev_pakkio.features`
 
-::: openjev.features
+::: jev_pakkio.features
 
-## `openjev.head`
+## `jev_pakkio.head`
 
-::: openjev.head
+::: jev_pakkio.head
 
-## `openjev.train`
+## `jev_pakkio.train`
 
-::: openjev.train
+::: jev_pakkio.train
 
-## `openjev.cli`
+## `jev_pakkio.cli`
 
-::: openjev.cli
+::: jev_pakkio.cli

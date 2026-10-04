@@ -1,4 +1,4 @@
-# openjev
+# jev_pakkio
 
 ## Platform support
 
@@ -38,9 +38,9 @@ second of warm-up.
 
 ## What you can do with it
 
-- **Rank options from the CLI** — [`openjev score`](cli.md#score) and
-  [`openjev eval`](cli.md#eval) for accuracy on jevlike-style JSONL.
-- **Serve it over HTTP** — [`openjev serve`](cli.md#serve) loads the model once
+- **Rank options from the CLI** — [`jev_pakkio score`](cli.md#score) and
+  [`jev_pakkio eval`](cli.md#eval) for accuracy on jevlike-style JSONL.
+- **Serve it over HTTP** — [`jev_pakkio serve`](cli.md#serve) loads the model once
   and answers `POST /score` and `POST /v1/systemone`, a
   [TypeSafe System One](https://docs.typesafe.ai)-compatible contract.
 - **Train a per-task head** — cache frozen-Gemma features and fit jevlike's
@@ -49,7 +49,7 @@ second of warm-up.
   description of the frame. See the [Doom demo](doom-demo.md).
 
 !!! note "macOS only"
-    openjev runs natively on macOS with Metal. There is no container path,
+    jev_pakkio runs natively on macOS with Metal. There is no container path,
     because Linux containers cannot reach the Apple GPU.
 
 ## Quick links
@@ -65,7 +65,7 @@ second of warm-up.
 ## Python in thirty seconds
 
 ```python
-from openjev import OptionScorer
+from jev_pakkio import OptionScorer
 
 s = OptionScorer("models/gemma-3-4b-it", batch_size=8)
 for r in s.score("The capital of France is", [" Paris", " Berlin"], norm="mean"):

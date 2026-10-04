@@ -9,13 +9,13 @@ Scoring commands (`score`, `eval`, `bench`, `check`) and `serve` accept:
 | `--backend` | `auto` | `mlx` on Apple silicon, `torch` elsewhere; can be set explicitly. |
 | `--device` | `auto` | PyTorch: CUDA if available, then MPS, then CPU. Accepts `cpu`, `cuda`, `cuda:N`, or `mps`. |
 
-Use `uv run openjev` in place of `.venv/bin/openjev` in examples to run them on
+Use `uv run jev_pakkio` in place of `.venv/bin/jev_pakkio` in examples to run them on
 Windows or Linux. After installing a custom GPU PyTorch build, use
-`uv run --no-sync openjev` to retain it.
+`uv run --no-sync jev_pakkio` to retain it.
 
 ```sh
-uv run openjev score --backend torch --device cpu --context "The capital of France is" --option " Paris" --option " Berlin"
-uv run --no-sync openjev serve --backend torch --device cuda --batch-size 2
+uv run jev_pakkio score --backend torch --device cpu --context "The capital of France is" --option " Paris" --option " Berlin"
+uv run --no-sync jev_pakkio serve --backend torch --device cuda --batch-size 2
 ```
 
 An explicitly selected unavailable GPU produces an error. MLX uses Metal and does
@@ -23,13 +23,13 @@ not support PyTorch device selection. MLX adapters are unsupported with PyTorch.
 `features`, `train`, and `eval-head` still require MLX on Apple silicon.
 
 
-The package installs one entry point, `openjev`:
+The package installs one entry point, `jev_pakkio`:
 
 ```
-openjev {score,eval,bench,check,features,train,eval-head,serve} ...
+jev_pakkio {score,eval,bench,check,features,train,eval-head,serve} ...
 ```
 
-In a `make setup` checkout it lives at `.venv/bin/openjev`.
+In a `make setup` checkout it lives at `.venv/bin/jev_pakkio`.
 
 ## Common flags
 
@@ -68,7 +68,7 @@ of the other scoring flags.
 Score options for one context.
 
 ```
-openjev score [common flags] --context CONTEXT
+jev_pakkio score [common flags] --context CONTEXT
               [--option OPTION ...] [--options-file OPTIONS_FILE] [--json]
 ```
 
@@ -81,14 +81,14 @@ openjev score [common flags] --context CONTEXT
 
 ```sh
 # Rank options for one context (prints probability, score, raw sum, token count)
-.venv/bin/openjev score --context "The capital of France is" \
+.venv/bin/jev_pakkio score --context "The capital of France is" \
     --option " Paris" --option " Berlin" --option " Lyon"
 
 # Chat template (context as user turn, options scored as the reply) + PMI normalisation
-.venv/bin/openjev score --chat --norm pmi --context "..." --option "..." --option "..."
+.venv/bin/jev_pakkio score --chat --norm pmi --context "..." --option "..." --option "..."
 
 # Predefined options: one per line in a text file, reused for every context
-.venv/bin/openjev score --options-file options.txt --context "..."
+.venv/bin/jev_pakkio score --options-file options.txt --context "..."
 ```
 
 There is also a Makefile wrapper:
@@ -103,7 +103,7 @@ Top-k accuracy on jevlike-style JSONL rows,
 `{"context": ..., "options": [...], "label": 0}`.
 
 ```
-openjev eval [common flags] [--limit LIMIT] [--fixed-options FILE] [--verbose] data
+jev_pakkio eval [common flags] [--limit LIMIT] [--fixed-options FILE] [--verbose] data
 ```
 
 | argument | meaning |
@@ -115,10 +115,10 @@ openjev eval [common flags] [--limit LIMIT] [--fixed-options FILE] [--verbose] d
 
 ```sh
 # Top-1 / top-3 accuracy
-.venv/bin/openjev eval data.jsonl --norm mean
+.venv/bin/jev_pakkio eval data.jsonl --norm mean
 
 # Rows need only {"context": ...}; add "label" for accuracy
-.venv/bin/openjev eval contexts.jsonl --fixed-options options.txt
+.venv/bin/jev_pakkio eval contexts.jsonl --fixed-options options.txt
 ```
 
 Or through the Makefile, which passes `--model` and `--norm` for you:
@@ -133,7 +133,7 @@ Latency of prefix-cached batched scoring versus naive re-encoding, on a
 synthetic workload.
 
 ```
-openjev bench [common flags] [--context-tokens N] [--options N]
+jev_pakkio bench [common flags] [--context-tokens N] [--options N]
               [--option-tokens N] [--repeat N] [--tol TOL]
 ```
 
@@ -146,7 +146,7 @@ openjev bench [common flags] [--context-tokens N] [--options N]
 | `--tol TOL` | `0.5` |
 
 ```sh
-.venv/bin/openjev bench --context-tokens 200 --options 8 --option-tokens 30
+.venv/bin/jev_pakkio bench --context-tokens 200 --options 8 --option-tokens 30
 make bench
 ```
 
@@ -157,7 +157,7 @@ the same flags as `bench`; `--tol` is the maximum absolute log-probability
 difference allowed before the check fails.
 
 ```sh
-.venv/bin/openjev check
+.venv/bin/jev_pakkio check
 make check
 ```
 
@@ -167,7 +167,7 @@ Cache frozen-Gemma features for a JSONL file into an `.npz`. See
 [Training a head](training.md) for how the cache is used.
 
 ```
-openjev features [common flags] --out OUT [--limit LIMIT] [--contextual] data
+jev_pakkio features [common flags] --out OUT [--limit LIMIT] [--contextual] data
 ```
 
 | argument | meaning |
@@ -178,7 +178,7 @@ openjev features [common flags] --out OUT [--limit LIMIT] [--contextual] data
 | `--contextual` | encode options as continuations of the context (leaks the match into option features) |
 
 ```sh
-.venv/bin/openjev features data/synthetic/train.jsonl --out runs/feats/train.npz
+.venv/bin/jev_pakkio features data/synthetic/train.jsonl --out runs/feats/train.npz
 make features
 ```
 
@@ -187,7 +187,7 @@ make features
 Train the cross-attention head on cached features.
 
 ```
-openjev train --validation VALIDATION [--out OUT] [--rank RANK] [--epochs EPOCHS]
+jev_pakkio train --validation VALIDATION [--out OUT] [--rank RANK] [--epochs EPOCHS]
               [--batch-size BATCH_SIZE] [--learning-rate LEARNING_RATE] [--seed SEED] train
 ```
 
@@ -203,7 +203,7 @@ openjev train --validation VALIDATION [--out OUT] [--rank RANK] [--epochs EPOCHS
 | `--seed SEED` | `7` | random seed |
 
 ```sh
-.venv/bin/openjev train runs/feats/train.npz \
+.venv/bin/jev_pakkio train runs/feats/train.npz \
     --validation runs/feats/validation.npz --out runs/head.safetensors
 make train
 ```
@@ -217,14 +217,14 @@ make train
 Top-k, ECE and the shuffled-context control for a trained head.
 
 ```
-openjev eval-head checkpoint features
+jev_pakkio eval-head checkpoint features
 ```
 
 Both arguments are positional: the checkpoint written by `train`, and the test
 feature `.npz`.
 
 ```sh
-.venv/bin/openjev eval-head runs/head.safetensors runs/feats/test.npz
+.venv/bin/jev_pakkio eval-head runs/head.safetensors runs/feats/test.npz
 make eval-head
 ```
 
@@ -234,7 +234,7 @@ HTTP server with the model loaded once. Exposes `GET /health`, `POST /score`
 and `POST /v1/systemone`.
 
 ```
-openjev serve [--model MODEL] [--batch-size BATCH_SIZE] [--host HOST] [--port PORT]
+jev_pakkio serve [--model MODEL] [--batch-size BATCH_SIZE] [--host HOST] [--port PORT]
 ```
 
 | flag | default |
@@ -245,7 +245,7 @@ openjev serve [--model MODEL] [--batch-size BATCH_SIZE] [--host HOST] [--port PO
 | `--port PORT` | `8000` |
 
 ```sh
-.venv/bin/openjev serve --port 8000
+.venv/bin/jev_pakkio serve --port 8000
 make serve
 ```
 

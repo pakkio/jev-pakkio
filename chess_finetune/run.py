@@ -75,7 +75,7 @@ def main():
         print(f'Split audit written to {args.out}')
         return
     versions = {}
-    for package in ('mlx', 'mlx-lm', 'transformers', 'openjev'):
+    for package in ('mlx', 'mlx-lm', 'transformers', 'jev_pakkio'):
         try:
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
@@ -93,7 +93,7 @@ def main():
                     adapter=None if args.base_only else artifact_identity(args.adapter),
                     smoke_test=bool(args.limit))
     save(args.out / 'manifest.json', manifest)
-    from openjev.scorer import OptionScorer
+    from jev_pakkio.scorer import OptionScorer
     summary = {}
     variants = [('base', None)] + ([] if args.base_only else [('lora', args.adapter)])
     for name, adapter in variants:
