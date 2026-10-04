@@ -683,7 +683,11 @@ dependencies = [
 doom = [
     { name = "vizdoom" },
 ]
+laya = [
+    { name = "laya" },
+]
 mcp = [
+    { name = "httpx" },
     { name = "mcp", extra = ["cli"] },
 ]
 mlx = [
@@ -716,7 +720,9 @@ requires-dist = [
     { name = "accelerate", marker = "extra == 'torch'", specifier = ">=1.0" },
     { name = "bitsandbytes", marker = "extra == 'torch'", specifier = ">=0.50.2" },
     { name = "fastapi", specifier = ">=0.141.1" },
+    { name = "httpx", marker = "extra == 'mcp'", specifier = ">=0.27" },
     { name = "huggingface-hub", specifier = ">=1.31.0" },
+    { name = "laya", marker = "extra == 'laya'" },
     { name = "mcp", extras = ["cli"], marker = "extra == 'mcp'", specifier = ">=2.3.0" },
     { name = "mlx", marker = "extra == 'mlx'", specifier = ">=0.24" },
     { name = "mlx-lm", marker = "extra == 'mlx'", specifier = ">=0.24" },
@@ -730,7 +736,7 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.53.0" },
     { name = "vizdoom", marker = "extra == 'doom'", specifier = ">=1.2.4" },
 ]
-provides-extras = ["mlx", "torch", "doom", "mcp", "typesafe"]
+provides-extras = ["mlx", "torch", "laya", "doom", "mcp", "typesafe"]
 
 [package.metadata.requires-dev]
 docs = [
@@ -777,6 +783,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/74/a633ee74eb36c44aa6d1095e7cc5569bebf04342ee146178e2d36600708b/jsonschema_specifications-2025.9.1.tar.gz", hash = "sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d", size = 32855, upload-time = "2025-09-08T01:34:59.186Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe", size = 18437, upload-time = "2025-09-08T01:34:57.871Z" },
+]
+
+[[package]]
+name = "laya"
+version = "0.3.27"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "safetensors" },
+    { name = "torch", version = "2.9.1+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux'" },
+    { name = "torch", version = "2.14.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux'" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/77/7b58479ccc1c4d105e94df7721559c355f2aa07acbd0e4aeafa2703dc98e/laya-0.3.27.tar.gz", hash = "sha256:8a1ad028f2b02289fad0cb69a6058c7eb0cbf42506945726693e822b2f7f601b", size = 927091, upload-time = "2026-10-04T18:18:18.053Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/2d/fcc20780d4a757e13afed7f1e626712520591a425116e8bb4fbcbcafeae1/laya-0.3.27-py3-none-any.whl", hash = "sha256:7d3c30b1afc8e8ea5ab0285b02de2a46ee71563ba1590e1278a4a637a988fbfe", size = 322956, upload-time = "2026-10-04T18:18:16.421Z" },
 ]
 
 [[package]]

@@ -24,9 +24,11 @@ torch = [
     "bitsandbytes>=0.50.2",
     "peft>=0.21.0",
 ]  # CUDA / CPU
+laya = ["laya"]                                   # engine laya (convaiinnovations/laya)
 doom = ["vizdoom>=1.2.4"]                         # demo/doom: play Doom in the terminal with the server choosing actions
 mcp = [
     "mcp[cli]>=2.3.0",
+    "httpx>=0.27",  # also used by the jev engine
 ]
 typesafe = [
     "typesafe-sdk>=0.7.0",

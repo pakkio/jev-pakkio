@@ -137,18 +137,28 @@ def _resolve_heads(heads: dict | None) -> dict:
 
 def create_app(model_path: str | None = None, batch_size: int = 8, backend: str | None = None,
                device: str = "auto", quantize: str | None = None, heads: dict | None = None,
-               lora: dict | None = None) -> FastAPI:
-    """lora: {name: adapter_dir}. When given (torch only), the server runs in LoRA mode: one
+               lora: dict | None = None, engine: str | None = None) -> FastAPI:
+    """engine: a name from engines.ENGINE_NAMES. 4g/8g select a model + quantisation preset on the torch
+    backend; jev/laya serve /v1/systemone from the hosted API or the Laya encoder instead of a local scorer.
+
+    lora: {name: adapter_dir}. When given (torch only), the server runs in LoRA mode: one
     4-bit model through lora_serve.LoraEngine instead of OptionScorer, /v1/lora/score picks an
     adapter per request, and /score + /v1/systemone use the chat format with the adapter named
     after the question type ("choice", "score", "noul") when one is loaded, zero-shot otherwise.
     """
+    from .engines import ENGINE_NAMES, LOCAL_PRESETS, local_preset
+
+    if engine and engine not in ENGINE_NAMES:
+        raise ValueError(f"unknown engine {engine!r}; choose from {', '.join(ENGINE_NAMES)}")
+    remote = engine in ("jev", "laya")
+    if engine in LOCAL_PRESETS:
+        backend, (model_path, quantize) = "torch", local_preset(engine)
     backend = _resolve_backend(backend)
     if lora and backend != "torch":
         raise ValueError("LoRA serving needs the torch backend")
     quantize = _resolve_quantize(quantize)
     head_paths = _resolve_heads(heads)
-    model_path = model_path or os.environ.get("OPENJEV_MODEL") or _default_model(backend)
+    model_path = model_path or os.environ.get("OPENJEV_MODEL") or (engine if remote else _default_model(backend))
     if model_path == "auto":
         # Same rule as the CLI: largest model this machine's VRAM can hold.
         model_path = _auto_model(backend)
@@ -165,6 +175,13 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
     @app.on_event("startup")
     def _load() -> None:
         t = time.perf_counter()
+        if remote:
+            from .engines import get_engine
+
+            state["engine"] = get_engine(engine)
+            state["heads"] = {}
+            state["load_s"] = time.perf_counter() - t
+            return
         if lora:
             from .lora_serve import LoraEngine
 
@@ -189,10 +206,11 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
 
     @app.get("/health")
     def health() -> dict:
-        engine = state.get("lora")
-        return {"ok": "scorer" in state or engine is not None, "model": model_path, "backend": backend,
+        lora_engine = state.get("lora")
+        return {"ok": "scorer" in state or "engine" in state or lora_engine is not None, "engine": engine,
+                "model": model_path, "backend": backend,
                 "quantize": quantize, "heads": sorted(state.get("heads", {})),
-                "lora": sorted(engine.adapters) if engine else [], "load_s": state.get("load_s")}
+                "lora": sorted(lora_engine.adapters) if lora_engine else [], "load_s": state.get("load_s")}
 
     def _lora_probs(qtype: str, context: str, options: list[str]) -> tuple[list[float], list[float]]:
         engine = state["lora"]
@@ -278,6 +296,13 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
         prompts; a head trained on a different rendering serves answers that are
         well-formed but off-distribution.
         """
+        if "engine" in state:  # jev / laya: answered by the engine, no local scorer
+            try:
+                return state["engine"].answer(req)
+            except Exception as e:  # upstream HTTP errors, missing key, laya failures
+                raise HTTPException(502, f"engine {engine!r} failed: {e}")
+        if remote:
+            raise HTTPException(503, "engine still loading")
         scorer: OptionScorer = state.get("scorer")
         lora_mode = "lora" in state
         if scorer is None and not lora_mode:
@@ -337,8 +362,8 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
 
 def serve(host: str, port: int, model_path: str | None, batch_size: int, backend: str | None = None,
           device: str = "auto", quantize: str | None = None, heads: dict | None = None,
-          lora: dict | None = None) -> None:
+          lora: dict | None = None, engine: str | None = None) -> None:
     import uvicorn
 
-    uvicorn.run(create_app(model_path, batch_size, backend, device, quantize, heads, lora),
+    uvicorn.run(create_app(model_path, batch_size, backend, device, quantize, heads, lora, engine),
                 host=host, port=port, workers=1)
