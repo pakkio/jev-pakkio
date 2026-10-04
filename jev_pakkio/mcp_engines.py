@@ -4,8 +4,9 @@
     claude mcp add jev -- uv run jev_pakkio mcp-engines
 
 Tools
-  list_engines()                                   the engine names and what backs them
-  ask(state, questions, engine="laya")             one engine, System One response
+  list_engines()                                   the engine names and what backs them (incl. LoRA adapters)
+  list_adapters()                                  LoRA adapters per local engine (OPENJEV_LORA_4G / _8G)
+  ask(state, questions, engine="laya", adapter=)   one engine, System One response
   compare(state, questions, engines=[...])         the same request on several engines, with latency
 
 Engines load on first use and stay loaded, so only the ones you call cost memory.
@@ -17,7 +18,7 @@ from typing import Any, Literal
 
 from pydantic import TypeAdapter
 
-from .engines import ENGINE_NAMES, LOCAL_PRESETS, Engine, SystemOneRequest, get_engine, local_preset
+from .engines import ENGINE_NAMES, LOCAL_PRESETS, Engine, SystemOneRequest, get_engine, local_preset, lora_adapters
 
 try:  # mcp >= 2 renamed FastMCP to MCPServer
     from mcp.server.mcpserver import MCPServer as _Server
@@ -51,25 +52,42 @@ def build_server() -> _Server:
         info = {"jev": "TypeSafe hosted Jev (needs TYPESAFE_API_KEY)", "laya": "convaiinnovations/laya encoder"}
         for name in LOCAL_PRESETS:
             model, quant = local_preset(name)
-            info[name] = f"{model} ({quant})"
+            adapters = lora_adapters(name)
+            info[name] = f"{model} ({quant})" + (f" + LoRA {sorted(adapters)}" if adapters else "")
         return info
 
     @mcp.tool()
-    def ask(state: str | dict | list, questions: dict[str, Any], engine: EngineName = "laya") -> dict:
-        """Answer typed questions about `state` with the chosen engine; returns the System One response."""
-        return _engine(engine).answer(_request(state, questions)).model_dump(mode="json")
+    def list_adapters() -> dict[str, dict[str, str]]:
+        """LoRA adapters configured per local engine (OPENJEV_LORA_4G / OPENJEV_LORA_8G): name -> path."""
+        return {name: lora_adapters(name) for name in LOCAL_PRESETS}
+
+    @mcp.tool()
+    def ask(state: str | dict | list, questions: dict[str, Any], engine: EngineName = "laya",
+            adapter: str | None = None) -> dict:
+        """Answer typed questions about `state` with the chosen engine; returns the System One response.
+
+        adapter: a LoRA adapter name from list_adapters (4g/8g only), used for every question. Default: the
+        adapter named after each question's type (choice/score/noul) if loaded, else the base model."""
+        if adapter and engine not in LOCAL_PRESETS:
+            raise ValueError(f"engine {engine!r} has no LoRA adapters; adapters are for {', '.join(LOCAL_PRESETS)}")
+        eng = _engine(engine)
+        req = _request(state, questions)
+        resp = eng.answer(req, adapter=adapter) if adapter else eng.answer(req)
+        return resp.model_dump(mode="json")
 
     @mcp.tool()
     def compare(state: str | dict | list, questions: dict[str, Any],
-                engines: list[EngineName] = list(ENGINE_NAMES)) -> dict[str, dict]:
-        """Run the same request on several engines; each entry has latency_s and answers, or an error."""
+                engines: list[EngineName] = list(ENGINE_NAMES), adapter: str | None = None) -> dict[str, dict]:
+        """Run the same request on several engines; each entry has latency_s and answers, or an error.
+
+        adapter is applied only to engines that have it loaded (4g/8g)."""
         req = _request(state, questions)
         out: dict[str, dict] = {}
         for name in engines:
             try:
                 eng = _engine(name)
                 t = time.perf_counter()
-                resp = eng.answer(req)
+                resp = eng.answer(req, adapter=adapter) if adapter and name in LOCAL_PRESETS else eng.answer(req)
                 out[name] = {"latency_s": round(time.perf_counter() - t, 3),
                              "answers": resp.model_dump(mode="json")["answers"]}
             except Exception as e:  # one engine failing must not hide the others

@@ -9,13 +9,21 @@ laya  convaiinnovations/laya, a 421M encoder that answers typed questions in one
 8g    Gemma E2B scored through OptionScorer, bf16, sized for an 8 GB GPU
 
 The local model ids can be overridden with OPENJEV_ENGINE_4G / OPENJEV_ENGINE_8G.
+
+LoRA adapters: OPENJEV_LORA_4G / OPENJEV_LORA_8G = "NAME=PATH,NAME=PATH". When set, that engine loads the
+adapters' base model (from adapter_config.json, unless OPENJEV_ENGINE_<NAME> is set) 4-bit through
+lora_serve.LoraEngine. Each question uses the adapter named after its type ("choice", "score", "noul")
+if one is loaded, or the adapter passed to answer(); otherwise the base model answers zero-shot.
 """
 from __future__ import annotations
 
+import json
 import os
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Protocol
 
-from .systemone import SystemOneRequest, SystemOneResponse, system_one
+from .systemone import SystemOneRequest, SystemOneResponse, Usage, system_one
 
 JEV_URL = "https://api.typesafe.ai/v1/systemone"
 LAYA_REPO = "convaiinnovations/laya"
@@ -25,6 +33,40 @@ LOCAL_PRESETS = {
     "8g": ("google/gemma-3n-E2B-it", "none"),
 }
 ENGINE_NAMES = ("jev", "laya", *LOCAL_PRESETS)
+
+
+def lora_adapters(name: str) -> dict[str, str]:
+    """Adapters configured for a 4g/8g engine via OPENJEV_LORA_<NAME>="NAME=PATH,..."."""
+    adapters: dict[str, str] = {}
+    for spec in filter(None, (x.strip() for x in os.environ.get(f"OPENJEV_LORA_{name.upper()}", "").split(","))):
+        adapter, sep, path = spec.partition("=")
+        if not sep or not adapter or not path:
+            raise ValueError(f"OPENJEV_LORA_{name.upper()} expects NAME=PATH[,NAME=PATH], got {spec!r}")
+        adapters[adapter] = path
+    return adapters
+
+
+def _adapter_base(adapters: dict[str, str]) -> str:
+    bases = {json.loads((Path(p) / "adapter_config.json").read_text())["base_model_name_or_path"]
+             for p in adapters.values()}
+    if len(bases) != 1:
+        raise ValueError(f"adapters must share one base model, got {sorted(bases)}")
+    return bases.pop()
+
+
+class _LoraScorer:
+    """OptionScorer-shaped view of a LoraEngine with one adapter fixed, so system_one can drive it."""
+
+    def __init__(self, engine, adapter: str | None) -> None:
+        self.engine, self.adapter = engine, adapter
+
+    @property
+    def last_timing(self) -> dict:
+        return self.engine.last_timing
+
+    def score(self, prompt: str, labels: list[str], norm: str = "sum", chat: bool = False, sep: str = ""):
+        _, probs = self.engine.score(prompt, labels, adapter=self.adapter)
+        return [SimpleNamespace(probability=p) for p in probs]
 
 
 class Engine(Protocol):
@@ -95,16 +137,41 @@ class LocalEngine:
                  batch_size: int = 8, backend: str = "torch"):
         preset_model, preset_quant = local_preset(name) if name in LOCAL_PRESETS else (None, "none")
         self.name = name
+        self.adapters = lora_adapters(name) if name in LOCAL_PRESETS else {}
+        if self.adapters and not model and f"OPENJEV_ENGINE_{name.upper()}" not in os.environ:
+            model = _adapter_base(self.adapters)  # an adapter only works on the base it was trained on
         self.model = model or preset_model
         self.quantize = quantize or preset_quant
+        if self.adapters:
+            from .lora_serve import LoraEngine
+
+            self.lora = LoraEngine(self.model, self.adapters, "4bit" if self.quantize == "none" else self.quantize)
+            self.lora.score("warm up", ["a", "b"])
+            return
         from .server import _get_scorer_class  # lazy backend import
 
         kwargs = {"quantize": self.quantize} if backend == "torch" else {}
         self.scorer = _get_scorer_class(backend)(self.model, batch_size=batch_size, **kwargs)
         self.scorer.score("warm up", ["a", "b"])
 
-    def answer(self, req: SystemOneRequest) -> SystemOneResponse:
-        return system_one(self.scorer, req, model_name=req.model or os.path.basename(self.model))
+    def answer(self, req: SystemOneRequest, adapter: str | None = None) -> SystemOneResponse:
+        """adapter: LoRA adapter for every question; default is the one named after each question's type."""
+        model_name = req.model or os.path.basename(self.model)
+        if not self.adapters:
+            if adapter:
+                raise ValueError(f"engine {self.name!r} has no adapters (set OPENJEV_LORA_{self.name.upper()})")
+            return system_one(self.scorer, req, model_name=model_name)
+        if adapter and adapter not in self.adapters:
+            raise ValueError(f"unknown adapter {adapter!r}; loaded: {sorted(self.adapters)}")
+        answers: dict = {}
+        in_tok = out_tok = 0
+        for qid, q in req.questions.items():  # one question at a time: the adapter depends on its type
+            use = adapter or (q.type if q.type in self.adapters else None)
+            one = system_one(_LoraScorer(self.lora, use), req.model_copy(update={"questions": {qid: q}}), model_name)
+            answers.update(one.answers)
+            in_tok += one.usage.input_tokens
+            out_tok += one.usage.output_tokens
+        return SystemOneResponse(model=model_name, answers=answers, usage=Usage(input_tokens=in_tok, output_tokens=out_tok))
 
 
 def get_engine(name: str) -> Engine:
