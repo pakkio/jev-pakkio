@@ -185,6 +185,28 @@ Same routing decision, but Gemma is over-confident and disagrees on the two judg
 probabilities are softmaxed next-token likelihoods, not calibrated judgements. Closing the gap means
 labelled data and a trained head (below).
 
+## Engines and MCP server
+
+Four engines answer the same System One request/response, so they are interchangeable:
+
+| engine | what | needs |
+|---|---|---|
+| `jev` | TypeSafe's hosted Jev | `TYPESAFE_API_KEY` |
+| `laya` | [convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya), 421M encoder, one forward pass | `uv sync --extra laya` |
+| `4g` | Qwen 2.5 1.5B, 4-bit, for a 4 GB GPU | `--extra torch` |
+| `8g` | Gemma 3n E2B, bf16, for an 8 GB GPU | `--extra torch` |
+
+Override the local model ids with `OPENJEV_ENGINE_4G` / `OPENJEV_ENGINE_8G`.
+
+```sh
+uv run openjev ask examples/systemone-quickstart.json --engine jev --engine laya --engine 4g   # side by side
+uv run openjev serve --engine laya          # /v1/systemone answered by that engine
+claude mcp add openjev -- uv run --extra mcp --extra laya openjev mcp
+```
+
+The MCP server (`openjev mcp`, stdio) exposes `ask(state, questions, engine)`, `compare(state, questions, engines)`
+and `list_engines()`. The engine is a per-call argument; engines load on first use.
+
 ## Training a head (per-task, on frozen Gemma features)
 
 ```sh

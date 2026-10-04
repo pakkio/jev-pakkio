@@ -12,6 +12,7 @@ import time
 # `--help` and `--backend torch` work on machines without MLX (e.g. Linux).
 DEFAULT_MODEL = "models/gemma-3-4b-it"
 NORMS = ("mean", "sum", "pmi")
+ENGINE_NAMES = ("jev", "laya", "4g", "8g")  # keep in sync with engines.ENGINE_NAMES (not imported: it pulls pydantic)
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
@@ -25,8 +26,6 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--chat", action="store_true",
                    help="wrap context in Gemma's chat template; options score as the reply")
     p.add_argument("--sep", default="", help="string inserted between context and option")
-    p.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
-                   help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
     p.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
                    help="torch backend only: load the weights quantised via bitsandbytes")
 
@@ -229,7 +228,51 @@ def cmd_serve(args: argparse.Namespace) -> None:
         if not sep or not name or not path:
             raise SystemExit(f"--lora expects NAME=PATH, got {spec!r}")
         lora[name] = path
-    serve(args.host, args.port, args.model, args.batch_size, args.backend, args.quantize, heads or None, lora or None)
+    serve(args.host, args.port, args.model, args.batch_size, args.backend, args.quantize, heads or None, lora or None,
+          args.engine)
+
+
+def cmd_mcp(args: argparse.Namespace) -> None:
+    from .mcp_server import run
+
+    run()
+
+
+def cmd_ask(args: argparse.Namespace) -> None:
+    """Send one System One request to each engine and print the answers side by side."""
+    from .engines import get_engine
+    from .systemone import SystemOneRequest
+
+    with open(args.request) as f:
+        req = SystemOneRequest.model_validate_json(f.read())
+    req.model = None  # let each engine use its own model name
+    rows: dict[str, dict] = {}
+    for name in args.engine:
+        try:
+            engine = get_engine(name)
+            engine.answer(req)  # warm-up, so latency below excludes lazy loading
+            t = time.perf_counter()
+            resp = engine.answer(req)
+            rows[name] = {"latency_s": round(time.perf_counter() - t, 3),
+                          "answers": resp.model_dump(mode="json")["answers"]}
+        except Exception as e:
+            rows[name] = {"error": f"{type(e).__name__}: {e}"}
+        print(f"{name}: {'error' if 'error' in rows[name] else str(rows[name]['latency_s']) + ' s'}", file=sys.stderr)
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return
+    for qid in req.questions:
+        print(f"\n{qid}")
+        for name, row in rows.items():
+            a = row.get("answers", {}).get(qid)
+            if a is None:
+                print(f"  {name:5s} {row.get('error', 'no answer')}")
+                continue
+            main = a.get("choice") if a["type"] == "choice" else a.get("score", a.get("noul"))
+            conf = a.get("confidence")
+            main = f"{main:.3f}" if isinstance(main, float) else main
+            print(f"  {name:5s} {main}" + (f"  confidence={conf:.2f}" if conf is not None else "")
+                  + f"  [{row['latency_s']:.2f}s]")
 
 
 def cmd_features(args: argparse.Namespace) -> None:
@@ -380,6 +423,16 @@ def main(argv: list[str] | None = None) -> None:
     lq.add_argument("--out", default=None, help="output dir (default: ADAPTER-int8)")
     lq.set_defaults(fn=cmd_lora_quantize)
 
+    m = sub.add_parser("mcp", help="MCP server (stdio): ask / compare / list_engines, engine chosen per call")
+    m.set_defaults(fn=cmd_mcp)
+
+    a = sub.add_parser("ask", help="send one System One request file to several engines and compare answers")
+    a.add_argument("request", help="JSON file in the /v1/systemone format, e.g. examples/systemone-quickstart.json")
+    a.add_argument("--engine", action="append", choices=ENGINE_NAMES, required=True,
+                   help="repeat for each engine: jev, laya, 4g, 8g")
+    a.add_argument("--json", action="store_true")
+    a.set_defaults(fn=cmd_ask)
+
     v = sub.add_parser("serve", help="HTTP server with the model loaded once (POST /score, /v1/systemone)")
     v.add_argument("--model", default=None)
     v.add_argument("--batch-size", type=int, default=8)
@@ -387,8 +440,8 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:N, or mps")
     v.add_argument("--host", default="127.0.0.1")
     v.add_argument("--port", type=int, default=8000)
-    v.add_argument("--backend", choices=["mlx", "torch"], default="mlx",
-                   help="scoring backend: mlx (default, Apple silicon) or torch (PyTorch)")
+    v.add_argument("--engine", choices=ENGINE_NAMES, default=None,
+                   help="jev (TypeSafe API), laya (encoder), 4g (Qwen 4-bit) or 8g (Gemma E2B); all answer /v1/systemone")
     v.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
                      help="torch backend only: load the weights quantised via bitsandbytes")
     v.add_argument("--head-choice", default=None, help="Route-A choice head checkpoint for /score and choice questions")
@@ -400,6 +453,8 @@ def main(argv: list[str] | None = None) -> None:
     v.set_defaults(fn=cmd_serve)
 
     args = p.parse_args(argv)
+    if getattr(args, "backend", None) == "auto":  # MLX on Apple silicon, PyTorch elsewhere
+        args.backend = "mlx" if sys.platform == "darwin" else "torch"
     if len(getattr(args, "option", []) or []) == 1:
         p.error("--option must be given at least twice")
     args.fn(args)
