@@ -60,6 +60,7 @@ nav:
       - Training a head: training.md
       - LoRA fine-tuning: lora.md
       - Doom demo: doom-demo.md
+      - Jev-Mem agentic memory: mem.md
   - Design notes:
       - One-pass option scoring: design/one-pass-option-scoring.md
       - Per-task fine-tuning with Gemma: design/per-task-finetuning-with-gemma.md

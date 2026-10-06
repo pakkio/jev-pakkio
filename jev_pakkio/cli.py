@@ -356,9 +356,45 @@ def cmd_lora_quantize(args: argparse.Namespace) -> None:
     print(json.dumps(lora_torch.quantize_int8(args.adapter, args.out or args.adapter.rstrip("/") + "-int8")))
 
 
+def cmd_mem(args: argparse.Namespace) -> None:
+    import os
+    from datetime import datetime, timezone
+
+    from .mem import HTTPController, JevMem, SentenceTransformerEmbedder
+
+    ctl = HTTPController(args.url, api_key=os.environ.get("OPENJEV_API_KEY"))
+    emb = SentenceTransformerEmbedder(args.embedder)
+    mem = JevMem.load(args.store, ctl, emb) if os.path.exists(args.store) else JevMem(ctl, emb)
+    if args.mem_cmd == "add":
+        ts = None
+        if args.timestamp:
+            ts = datetime.fromisoformat(args.timestamp).replace(tzinfo=timezone.utc).timestamp()
+        n = mem.add(args.text, timestamp=ts, entities=args.entity or None)
+        mem.save(args.store)
+        print(json.dumps({"id": n.id if n else None, "types": n.types if n else None, "nodes": len(mem.store),
+                          "edges": len(mem.store.edges), "controller_calls": ctl.calls}))
+    else:
+        res = mem.query(args.query)
+        print(json.dumps({"evidence": [{"id": n.id, "score": round(s, 4), "content": n.content} for n, s in res.evidence],
+                          "trace": res.trace}, indent=2, ensure_ascii=False))
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="jev_pakkio", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    m = sub.add_parser("mem", help="Jev-Mem agentic memory controlled by a running `jev_pakkio serve` (needs the `mem` extra)")
+    m.add_argument("--store", default="jevmem.json", help="memory file (created on first add)")
+    m.add_argument("--url", default="http://127.0.0.1:8000", help="server providing /v1/systemone")
+    m.add_argument("--embedder", default="sentence-transformers/all-MiniLM-L6-v2")
+    msub = m.add_subparsers(dest="mem_cmd", required=True)
+    ma = msub.add_parser("add", help="write one observation")
+    ma.add_argument("text")
+    ma.add_argument("--timestamp", help="ISO time the statement was observed, e.g. 2024-05-16T10:00")
+    ma.add_argument("--entity", action="append", help="entity id; repeat. Default: capitalised-word heuristic")
+    mq = msub.add_parser("query", help="retrieve evidence for a query")
+    mq.add_argument("query")
+    m.set_defaults(fn=cmd_mem)
 
     s = sub.add_parser("score", help="score options for one context")
     _add_common(s)

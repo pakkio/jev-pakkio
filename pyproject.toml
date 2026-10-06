@@ -24,6 +24,7 @@ torch = [
     "bitsandbytes>=0.50.2",
     "peft>=0.21.0",
 ]  # CUDA / CPU
+mem = ["sentence-transformers>=3.0"]                  # jev_pakkio.mem embedder (Jev-Mem)
 laya = ["laya"]                                   # engine laya (convaiinnovations/laya)
 doom = ["vizdoom>=1.2.4"]                         # demo/doom: play Doom in the terminal with the server choosing actions
 mcp = [
