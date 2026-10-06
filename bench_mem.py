@@ -2,6 +2,7 @@
 
     uv run --no-sync python bench_mem.py --controller local                 # jev_pakkio serve on :8000
     uv run --no-sync python bench_mem.py --controller typesafe              # hosted Jev, key from env or ../.env
+    uv run --no-sync python bench_mem.py --controller engine --engine laya  # in-process engine: jev, laya, 4g, 8g
 
 Metric: gold-evidence recall@K and the share of questions whose gold set is fully retrieved, K small on
 purpose so that flat top-K has to choose. Flat baseline = the same vector+BM25 RRF the memory uses for anchors.
@@ -13,7 +14,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-from jev_pakkio.mem import HTTPController, JevMem, ReadConfig, SentenceTransformerEmbedder
+from jev_pakkio.mem import EngineController, HTTPController, JevMem, ReadConfig, SentenceTransformerEmbedder
 
 
 def ts(month: int, day: int) -> float:
@@ -69,13 +70,19 @@ def score(retrieved: list[str], gold: set[str]) -> tuple[float, bool]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--controller", choices=("local", "typesafe"), required=True)
+    ap.add_argument("--controller", choices=("local", "typesafe", "engine"), required=True)
+    ap.add_argument("--engine", default="jev", help="with --controller engine: jev, laya, 4g or 8g (in-process)")
     ap.add_argument("--url", default=None)
     ap.add_argument("--model", default=None)
     ap.add_argument("--k", type=int, default=3)
     a = ap.parse_args()
 
-    if a.controller == "typesafe":
+    label = a.controller + (":" + a.engine if a.controller == "engine" else "")
+    if a.controller == "engine":
+        from jev_pakkio.engines import get_engine
+
+        ctl = EngineController(get_engine(a.engine))
+    elif a.controller == "typesafe":
         key = api_key()
         if not key:
             raise SystemExit("TYPESAFE_API_KEY not found in env or ../.env")
@@ -88,7 +95,7 @@ def main() -> None:
     for nid, (m, d), text in TURNS:
         mem.add(text, timestamp=ts(m, d), node_id=nid)
     build_s, build_calls = time.time() - t0, ctl.calls
-    print(f"controller={a.controller} K={a.k}  build {build_s:.1f}s, {build_calls} calls, "
+    print(f"controller={label} K={a.k}  build {build_s:.1f}s, {build_calls} calls, "
           f"{len(mem.store)} nodes, {len(mem.store.edges)} edges")
 
     rows = []

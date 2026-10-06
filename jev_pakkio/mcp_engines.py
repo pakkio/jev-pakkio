@@ -8,6 +8,9 @@ Tools
   list_adapters()                                  LoRA adapters per local engine (OPENJEV_LORA_4G / _8G)
   ask(state, questions, engine="laya", adapter=)   one engine, System One response
   compare(state, questions, engines=[...])         the same request on several engines, with latency
+  memory_add(text, store=, engine=, timestamp=)    write an observation into a named Jev-Mem store
+  memory_query(query, store=, engine=, top_k=)     retrieve evidence from a store (engine = System-One controller)
+  memory_stores()                                  stores on disk (JEVMEM_DIR, default ./jevmem)
 
 Engines load on first use and stay loaded, so only the ones you call cost memory.
 """
@@ -27,12 +30,23 @@ except ImportError:
 
 EngineName = Literal["jev", "laya", "4g", "8g"]
 _loaded: dict[str, Engine] = {}
+_memory = None
 
 
 def _engine(name: str) -> Engine:
     if name not in _loaded:
         _loaded[name] = get_engine(name)
     return _loaded[name]
+
+
+def _memory_service():
+    global _memory
+    if _memory is None:  # imported lazily: needs the `mem` extra (sentence-transformers)
+        from .mem.service import MemoryService
+        from .mem.store import SentenceTransformerEmbedder
+
+        _memory = MemoryService(_engine, SentenceTransformerEmbedder)
+    return _memory
 
 
 def _request(state: Any, questions: dict[str, Any]) -> SystemOneRequest:
@@ -93,6 +107,30 @@ def build_server() -> _Server:
             except Exception as e:  # one engine failing must not hide the others
                 out[name] = {"error": f"{type(e).__name__}: {e}"}
         return out
+
+    @mcp.tool()
+    def memory_add(text: str, store: str = "default", engine: EngineName = "jev", timestamp: str | None = None,
+                   entities: list[str] | None = None) -> dict:
+        """Write one observation into a Jev-Mem store (created on first use) and persist it.
+
+        The engine is the System-One controller that types the observation and judges its relations to similar
+        memories. timestamp: ISO time the statement was observed (UTC if no zone). entities: ids shared across
+        memories; default is a capitalised-word heuristic."""
+        return _memory_service().add(text, store, engine, timestamp, entities)
+
+    @mcp.tool()
+    def memory_query(query: str, store: str = "default", engine: EngineName = "jev", top_k: int = 10) -> dict:
+        """Retrieve the evidence most relevant to `query` from a Jev-Mem store.
+
+        The engine routes the query over the semantic/temporal/causal/entity graphs, scores candidates and decides
+        when to stop. Returns evidence (id, score, content) and a trace of the routing, rounds and stop reason.
+        Answer synthesis is left to the caller."""
+        return _memory_service().query(query, store, engine, top_k)
+
+    @mcp.tool()
+    def memory_stores() -> dict[str, dict]:
+        """Jev-Mem stores found on disk, with node and edge counts for those loaded in this process."""
+        return _memory_service().stores()
 
     return mcp
 

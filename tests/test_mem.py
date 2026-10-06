@@ -3,7 +3,9 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 
-from jev_pakkio.mem import HashEmbedder, JevMem, ReadConfig
+from jev_pakkio.mem import EngineController, HashEmbedder, JevMem, ReadConfig
+from jev_pakkio.mem.service import MemoryService
+from jev_pakkio.systemone import ChoiceAnswer, NoulAnswer, SystemOneResponse, Usage
 from jev_pakkio.mem.read import allocate_budget, max_depth, recency_adjust, should_stop, transition_score
 from jev_pakkio.mem.store import GRAPHS
 
@@ -173,6 +175,78 @@ class MathTests(unittest.TestCase):
         self.assertGreater(fresh, stale)
         self.assertEqual(recency_adjust(0.5, 1.0, newest, None), 0.5)
         self.assertEqual(recency_adjust(0.5, 0.0, newest, week_old), 0.5)  # r(q)=0 disables the adjustment
+
+
+class FakeEngine:
+    """Engine protocol (answer(req) -> SystemOneResponse) backed by the keyword fake."""
+    name = "fake"
+
+    def __init__(self):
+        self.fake = FakeController()
+        self.adapters = []
+
+    def answer(self, req, adapter=None):
+        self.adapters.append(adapter)
+        qs = {k: q.model_dump(mode="json") for k, q in req.questions.items()}
+        out = {}
+        for k, a in self.fake.ask(req.state, qs).items():
+            out[k] = NoulAnswer(noul=a["noul"]) if "noul" in a else ChoiceAnswer(
+                choice=a["choice"], probabilities=a["probabilities"], confidence=0.5)
+        return SystemOneResponse(model="fake", answers=out, usage=Usage(input_tokens=0, output_tokens=0))
+
+
+class EngineControllerTests(unittest.TestCase):
+    def test_engine_drives_memory_end_to_end(self):
+        eng = FakeEngine()
+        mem = build(EngineController(eng))
+        self.assertIn(("m1", "m2", "causal"), {(e.src, e.dst, e.kind) for e in mem.store.edges})
+        ids = [n.id for n, _ in mem.query("When did Mira buy a new bicycle, and why?").evidence]
+        self.assertTrue({"m1", "m2"} <= set(ids))
+
+    def test_adapter_is_forwarded_only_when_set(self):
+        eng = FakeEngine()
+        EngineController(eng).ask({"observation": "s"}, {"episodic": {"type": "noul", "instructions": "x"}})
+        EngineController(eng, adapter="noul").ask({"observation": "s"}, {"episodic": {"type": "noul", "instructions": "x"}})
+        self.assertEqual(eng.adapters, [None, "noul"])
+
+
+class MemoryServiceTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.engines = []
+
+        def get_engine(name):
+            self.engines.append(name)
+            return FakeEngine()
+
+        self.svc = MemoryService(get_engine, HashEmbedder, root=self.tmp.name)
+
+    def test_add_query_persist_and_reload(self):
+        r1 = self.svc.add("Mira: My old bicycle broke.", "t", timestamp="2024-05-14T10:00", entities=["Mira", "bicycle"])
+        r2 = self.svc.add("Mira: I bought a new bicycle yesterday because my old one broke.", "t",
+                          timestamp="2024-05-16T10:00", entities=["Mira", "bicycle"])
+        self.assertEqual((r1["nodes"], r2["nodes"]), (1, 2))
+        self.assertGreaterEqual(r2["edges"], 1)
+        self.assertTrue(os.path.exists(os.path.join(self.tmp.name, "t.json")))
+        fresh = MemoryService(lambda n: FakeEngine(), HashEmbedder, root=self.tmp.name)  # new process
+        out = fresh.query("When did Mira buy a new bicycle, and why?", "t", top_k=5)
+        self.assertEqual(len(out["evidence"]), 2)
+        self.assertEqual(fresh.stores(), {"t": {"loaded": True, "nodes": 2, "edges": r2["edges"]}})
+
+    def test_engine_can_change_between_calls(self):
+        self.svc.add("Mira: My old bicycle broke.", "s", engine="laya")
+        self.svc.query("bicycle", "s", engine="8g")
+        self.assertEqual(self.engines, ["laya", "8g"])
+
+    def test_store_names_cannot_escape_the_directory(self):
+        for bad in ("../x", "a/b", "", "a b", "x" * 65):
+            with self.assertRaises(ValueError):
+                self.svc.add("hello there", bad)
+
+    def test_empty_text_is_not_persisted(self):
+        self.assertIsNone(self.svc.add("   ", "e")["id"])
+        self.assertFalse(os.path.exists(os.path.join(self.tmp.name, "e.json")))
 
 
 if __name__ == "__main__":

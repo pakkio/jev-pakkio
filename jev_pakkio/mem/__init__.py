@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from typing import Callable
 
-from .control import Controller, HTTPController, LocalController
+from .control import Controller, EngineController, HTTPController, LocalController
 from .read import ReadConfig, Result, retrieve
 from .store import Embedder, HashEmbedder, MemoryStore, Node, SentenceTransformerEmbedder
 from .write import WriteConfig, write
 
-__all__ = ["JevMem", "HTTPController", "LocalController", "ReadConfig", "WriteConfig", "Result", "MemoryStore",
+__all__ = ["JevMem", "HTTPController", "LocalController", "EngineController", "ReadConfig", "WriteConfig", "Result", "MemoryStore",
            "Node", "HashEmbedder", "SentenceTransformerEmbedder"]
 
 

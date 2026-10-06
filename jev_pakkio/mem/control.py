@@ -60,6 +60,23 @@ class LocalController:
         return {k: v.model_dump() for k, v in resp.answers.items()}
 
 
+class EngineController:
+    """Runs on any registered engine (jev, laya, 4g, 8g) in-process, no HTTP server needed."""
+
+    def __init__(self, engine, adapter: str | None = None):
+        self.engine, self.adapter, self.calls = engine, adapter, 0
+
+    def ask(self, state, questions):
+        if not questions:
+            return {}
+        from ..systemone import SystemOneRequest
+
+        self.calls += 1
+        req = SystemOneRequest.model_validate({"state": state, "questions": questions})
+        resp = self.engine.answer(req, adapter=self.adapter) if self.adapter else self.engine.answer(req)
+        return {k: v.model_dump() for k, v in resp.answers.items()}
+
+
 def p(answers: dict[str, dict], qid: str, default: float = 0.0) -> float:
     a = answers.get(qid)
     return float(a["noul"]) if a else default
