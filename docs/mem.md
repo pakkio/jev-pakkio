@@ -45,7 +45,7 @@ Not validated against LoCoMo. The unit tests use a keyword fake controller and c
 ## Engines and MCP
 
 `EngineController(get_engine("jev"))` runs Jev-Mem in-process on any registered engine (`jev`, `laya`, `4g`, `8g`),
-with no HTTP server. `jev_pakkio mcp-engines` exposes it as tools: `memory_add(text, store, engine, timestamp,
+with no HTTP server. `jev_pakkio mcp` exposes it as tools: `memory_add(text, store, engine, timestamp,
 entities)`, `memory_query(query, store, engine, top_k)` and `memory_stores()`. Stores are JSON files under
 `JEVMEM_DIR` (default `./jevmem`); the engine is only the controller and can differ between calls on one store.
 Needs the `mem` and `mcp` extras. Measured so far on the 10-question set: `jev` as controller gives recall@3 0.900

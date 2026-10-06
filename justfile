@@ -43,30 +43,25 @@ run:
     model="{{ model }}"
     if [ "$model" = "auto" ]; then
       model=$({{ bin }}/python -c "from jev_pakkio.scorer_torch import auto_model; print(auto_model())")
-      echo "auto-selected model: $model"
+      echo "auto-selected model: $model" >&2
     fi
     exec {{ bin }}/jev_pakkio serve --backend {{ backend }} --quantize {{ quantize }} \
       --device {{ device }} --host {{ host }} --port {{ port }} --model "$model"
 
-# MCP server (streamable-http) on MCP_PORT: noul, rate, classify, jev/jev-pakkio,
-# train_lora, status. Same MODEL=auto VRAM sizing as `run`; requires
-# requires Bearer "pakkio 62" (override: JEV_MCP_PASSWORD) as the port's token.
-mcp:
+# The MCP server (stdio): classify, rate, noul, jev, ask, compare, list_engines,
+# memory_*, train_lora, status. Engines load on first use. Same MODEL=auto VRAM
+# sizing as `run`. `just mcp --http` serves streamable-http on MCP_PORT instead,
+# with Bearer "pakkio 62" (override: JEV_MCP_PASSWORD) as the port's token.
+mcp *args:
     #!/usr/bin/env bash
     set -euo pipefail
     model="{{ model }}"
     if [ "$model" = "auto" ]; then
       model=$({{ bin }}/python -c "from jev_pakkio.scorer_torch import auto_model; print(auto_model())")
-      echo "auto-selected model: $model"
+      echo "auto-selected model: $model" >&2
     fi
     exec {{ bin }}/jev_pakkio mcp --backend {{ backend }} --quantize {{ quantize }} \
-      --device {{ device }} --host {{ host }} --port {{ mcp_port }} --model "$model"
-
-# MCP server (stdio) with all four engines (jev, laya, 4g, 8g): ask / compare /
-# list_engines. Engines load on first use and stay loaded, so only the ones
-# you call take VRAM.
-mcp-engines:
-    exec {{ bin }}/jev_pakkio mcp-engines
+      --device {{ device }} --host {{ host }} --port {{ mcp_port }} --model "$model" {{ args }}
 
 # Curl the running server's health endpoint.
 health:

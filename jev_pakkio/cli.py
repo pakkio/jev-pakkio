@@ -13,7 +13,7 @@ import time
 # `--help` and `--backend torch` work on machines without MLX (e.g. Linux).
 DEFAULT_MODEL = "google/gemma-4-E2B-it"
 NORMS = ("mean", "sum", "pmi")
-ENGINE_NAMES = ("jev", "laya", "4g", "8g")  # keep in sync with engines.ENGINE_NAMES (not imported: it pulls pydantic)
+ENGINE_NAMES = ("jev", "mercury", "laya", "4g", "8g")  # keep in sync with engines.ENGINE_NAMES (not imported: it pulls pydantic)
 
 
 def resolve_backend(backend: str) -> str:
@@ -258,12 +258,6 @@ def cmd_serve(args: argparse.Namespace) -> None:
           quantize=args.quantize, heads=heads or None, lora=lora or None, engine=args.engine)
 
 
-def cmd_mcp_engines(args: argparse.Namespace) -> None:
-    from .mcp_engines import run
-
-    run()
-
-
 def cmd_ask(args: argparse.Namespace) -> None:
     """Send one System One request to each engine and print the answers side by side."""
     from .engines import get_engine
@@ -347,7 +341,7 @@ def cmd_mcp(args: argparse.Namespace) -> None:
     from . import mcp_server
 
     mcp_server.run(args.host, args.port, args.model, backend=args.backend, device=args.device,
-                   quantize=args.quantize)
+                   quantize=args.quantize, engine=args.engine, http=args.http)
 
 
 def cmd_lora_quantize(args: argparse.Namespace) -> None:
@@ -492,9 +486,6 @@ def main(argv: list[str] | None = None) -> None:
     lq.add_argument("--out", default=None, help="output dir (default: ADAPTER-int8)")
     lq.set_defaults(fn=cmd_lora_quantize)
 
-    m = sub.add_parser("mcp-engines", help="MCP server (stdio): ask / compare / list_engines, engine chosen per call")
-    m.set_defaults(fn=cmd_mcp_engines)
-
     a = sub.add_parser("ask", help="send one System One request file to several engines and compare answers")
     a.add_argument("request", help="JSON file in the /v1/systemone format, e.g. examples/systemone-quickstart.json")
     a.add_argument("--engine", action="append", choices=ENGINE_NAMES, required=True,
@@ -510,7 +501,7 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--host", default="127.0.0.1")
     v.add_argument("--port", type=int, default=8000)
     v.add_argument("--engine", choices=ENGINE_NAMES, default=None,
-                   help="jev (TypeSafe API), laya (encoder), 4g (Qwen 4-bit) or 8g (Gemma E2B); all answer /v1/systemone")
+                   help="jev (TypeSafe API), mercury (Mercury Decide on OpenRouter), laya (encoder), 4g (Qwen 4-bit) or 8g (Gemma E2B); all answer /v1/systemone")
     v.add_argument("--quantize", choices=["none", "8bit", "4bit"], default="none",
                      help="torch backend only: load the weights quantised via bitsandbytes")
     v.add_argument("--head-choice", default=None, help="Route-A choice head checkpoint for /score and choice questions")
@@ -521,9 +512,13 @@ def main(argv: list[str] | None = None) -> None:
                         "also serves that /v1/systemone question type")
     v.set_defaults(fn=cmd_serve)
 
-    m = sub.add_parser("mcp", help="MCP server over streamable-http: noul, rate, classify, "
-                                    "jev/jev-pakkio, train_lora, status")
+    m = sub.add_parser("mcp", help="the MCP server (stdio; --http for streamable-http): classify, rate, noul, jev, "
+                                    "ask, compare, list_engines, memory_*, train_lora, status")
+    m.add_argument("--http", action="store_true", help="serve streamable-http on --host/--port instead of stdio")
     m.add_argument("--model", default=None)
+    m.add_argument("--engine", choices=("local", *ENGINE_NAMES), default=None,
+                   help="engine answering classify/rate/noul: laya (default), jev, mercury, 4g, 8g, or local "
+                        "(the Gemma OptionScorer selected by --model/--backend); env OPENJEV_MCP_ENGINE")
     m.add_argument("--backend", choices=("auto", "mlx", "torch"), default="auto")
     m.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:N, or mps")
     m.add_argument("--host", default="127.0.0.1")

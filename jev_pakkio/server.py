@@ -150,7 +150,7 @@ def create_app(model_path: str | None = None, batch_size: int = 8, backend: str 
 
     if engine and engine not in ENGINE_NAMES:
         raise ValueError(f"unknown engine {engine!r}; choose from {', '.join(ENGINE_NAMES)}")
-    remote = engine in ("jev", "laya")
+    remote = engine in ("jev", "mercury", "laya")
     if engine in LOCAL_PRESETS:
         backend, (model_path, quantize) = "torch", local_preset(engine)
     backend = _resolve_backend(backend)

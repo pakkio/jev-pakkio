@@ -60,7 +60,8 @@ def gemma4_device_map(cfg, quantize: str | None, device: str, on_gpu: bool) -> s
     """Placement for a Gemma 4 E-series model: table on CPU, layers on GPU 0."""
     lm = "model.language_model"
     device_map = {f"{lm}.{k}": 0 for k in ("embed_tokens", "layers", "norm", "rotary_emb",
-                                           "per_layer_model_projection", "per_layer_projection_norm")}
+                                           "per_layer_model_projection", "per_layer_projection_norm",
+                                           "altup_projections", "altup_unembed_projections")}  # altup_*: Gemma 3n only
     device_map["lm_head"] = 0
     device_map[f"{lm}.embed_tokens_per_layer"] = "cpu"
     device_map.update({f"model.{m}": "cpu" for m in CPU_MODULES})
@@ -117,7 +118,8 @@ def gemma4_cpu_module_map(cfg) -> dict:
     """
     lm = "model.language_model"
     device_map = {f"{lm}.{k}": 0 for k in ("embed_tokens", "layers", "norm", "rotary_emb",
-                                           "per_layer_model_projection", "per_layer_projection_norm")}
+                                           "per_layer_model_projection", "per_layer_projection_norm",
+                                           "altup_projections", "altup_unembed_projections")}  # altup_*: Gemma 3n only
     device_map["lm_head"] = 0
     device_map[f"{lm}.embed_tokens_per_layer"] = "cpu"
     device_map.update({f"model.{m}": "cpu" for m in CPU_MODULES})

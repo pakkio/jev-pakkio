@@ -1,7 +1,8 @@
-"""MCP server: noul, rate, classify and jev scoring tools over streamable-http,
-plus async LoRA training and status.
+"""The one MCP server: scoring (noul, rate, classify, jev), engine tools (ask, compare, list_engines,
+list_adapters, memory_*), async LoRA training and status.
 
-    jev_pakkio mcp --port 5001
+    jev_pakkio mcp                      # stdio, for Claude Code / Claude Desktop
+    jev_pakkio mcp --http --port 5001   # streamable-http, bearer-token protected
 
 `jev` takes `cases: [{"context", "options"}, ...]` and races each case against
 TypeSafe's hosted Jev (api.typesafe.ai/v1/systemone, model jev-latest; needs
@@ -11,7 +12,7 @@ the normal auto-VRAM model sizing, see scorer_torch.auto_model) concurrently.
 The merged answer is always jev's when jev succeeds; the local model only
 takes over if jev itself errors.
 
-The port requires `Authorization: Bearer <password>` on every call (default
+The HTTP port requires `Authorization: Bearer <password>` on every call (default
 "pakkio 62", override with JEV_MCP_PASSWORD).
 """
 from __future__ import annotations
@@ -30,6 +31,8 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from starlette.responses import JSONResponse
 
+from .engines import ENGINE_NAMES
+from .mcp_engines import INSTRUCTIONS, register_tools
 from .server import _auto_model, _default_model, _get_scorer_class, _resolve_backend, _resolve_quantize
 from .systemone import (
     ChoiceQuestion,
@@ -42,18 +45,23 @@ from .systemone import (
     render_score,
 )
 
-mcp = MCPServer("jev_pakkio")
+mcp = MCPServer("jev", instructions=INSTRUCTIONS)
+register_tools(mcp)
 _STATE: dict[str, Any] = {}
 _JOBS: dict[str, dict] = {}
 _JOBS_LOCK = threading.Lock()
 
 
 def configure(model_path: str | None = None, backend: str | None = None, device: str = "auto",
-             quantize: str | None = None) -> None:
+             quantize: str | None = None, engine: str | None = None) -> None:
     """Set the model/backend every tool below scores with. Called once from
     `jev_pakkio mcp` before `mcp.run`; the scorer itself loads lazily on first use.
+
+    engine: which engine answers classify/rate/noul -- any name from engines.ENGINE_NAMES (laya by
+    default, so no Gemma is loaded until a tool needs it) or "local" for the OptionScorer below.
     """
     _STATE["configured"] = True
+    _STATE["engine"] = engine or os.environ.get("OPENJEV_MCP_ENGINE") or "laya"
     _STATE["backend"] = _resolve_backend(backend)
     _STATE["device"] = device
     _STATE["quantize"] = _resolve_quantize(quantize)
@@ -108,15 +116,39 @@ def _scorer():
     return _STATE["scorer"]
 
 
+def _engine_answer(state: Entry, q: ChoiceQuestion | ScoreQuestion | NoulQuestion,
+                   engine: str | None = None) -> dict | None:
+    """Answer one question through `engine` (default: the configured one); None means the local scorer."""
+    if "configured" not in _STATE:
+        configure()
+    name = engine or _STATE["engine"]
+    if name != "local" and name not in ENGINE_NAMES:
+        raise ValueError(f"unknown engine {name!r}; choose from local, {', '.join(ENGINE_NAMES)}")
+    if name == "local":
+        return None
+    from .engines import get_engine
+    from .systemone import SystemOneRequest
+
+    engines = _STATE.setdefault("engines", {})
+    if name not in engines:
+        engines[name] = get_engine(name)
+    req = SystemOneRequest(state=state, questions={"q": q})
+    return engines[name].answer(req).answers["q"].model_dump(mode="json", exclude={"type"})
+
+
 def _ask(prompt: str, labels: list[str]) -> list[float]:
     res = _scorer().score(prompt, labels, norm="sum", chat=False, sep="")
     return [r.probability for r in res]
 
 
 @mcp.tool()
-def classify(state: Entry, criteria: dict[str, Entry], instructions: Entry = None) -> dict:
-    """Choose exactly one of 2+ named criteria for `state` (TypeSafe "choice" question)."""
+def classify(state: Entry, criteria: dict[str, Entry], instructions: Entry = None, engine: str | None = None) -> dict:
+    """Choose exactly one of 2+ named criteria for `state` (TypeSafe "choice" question).
+
+    engine: laya (default), jev, mercury, 4g, 8g or local; overrides the server's engine for this call."""
     q = ChoiceQuestion(type="choice", instructions=instructions, criteria=criteria)
+    if (answer := _engine_answer(state, q, engine)) is not None:
+        return answer
     prompt, labels = render_choice(state, q)
     probs = _ask(prompt, labels)
     best = max(range(len(labels)), key=lambda i: probs[i])
@@ -124,9 +156,13 @@ def classify(state: Entry, criteria: dict[str, Entry], instructions: Entry = Non
 
 
 @mcp.tool()
-def rate(state: Entry, criteria: list[Entry], instructions: Entry = None) -> dict:
-    """Rate `state` on an ordered list of 2+ levels; returns the probability-weighted level."""
+def rate(state: Entry, criteria: list[Entry], instructions: Entry = None, engine: str | None = None) -> dict:
+    """Rate `state` on an ordered list of 2+ levels; returns the probability-weighted level.
+
+    engine: laya (default), jev, mercury, 4g, 8g or local; overrides the server's engine for this call."""
     q = ScoreQuestion(type="score", instructions=instructions, criteria=criteria)
+    if (answer := _engine_answer(state, q, engine)) is not None:
+        return answer
     prompt, labels = render_score(state, q)
     probs = _ask(prompt, labels)
     return {
@@ -139,10 +175,14 @@ def rate(state: Entry, criteria: list[Entry], instructions: Entry = None) -> dic
 
 @mcp.tool()
 def noul(state: Entry, true_criteria: Entry = None, false_criteria: Entry = None,
-        instructions: Entry = None) -> dict:
-    """Answer yes/no on `state`; returns P(yes) in [0, 1] (TypeSafe "noul" question)."""
+        instructions: Entry = None, engine: str | None = None) -> dict:
+    """Answer yes/no on `state`; returns P(yes) in [0, 1] (TypeSafe "noul" question).
+
+    engine: laya (default), jev, mercury, 4g, 8g or local; overrides the server's engine for this call."""
     crit = {k: v for k, v in (("true", true_criteria), ("false", false_criteria)) if v is not None}
     q = NoulQuestion(type="noul", instructions=instructions, criteria=crit or None)
+    if (answer := _engine_answer(state, q, engine)) is not None:
+        return {"noul": answer["noul"]}
     prompt, labels = render_noul(state, q)
     probs = _ask(prompt, labels)
     return {"noul": probs[0]}
@@ -447,10 +487,14 @@ class _BearerAuth:
 
 
 def run(host: str = "127.0.0.1", port: int = 5001, model_path: str | None = None,
-        backend: str | None = None, device: str = "auto", quantize: str | None = None) -> None:
+        backend: str | None = None, device: str = "auto", quantize: str | None = None,
+        engine: str | None = None, http: bool = False) -> None:
+    configure(model_path, backend, device, quantize, engine)
+    if not http:
+        mcp.run()  # stdio
+        return
     import uvicorn
 
-    configure(model_path, backend, device, quantize)
     app = mcp.streamable_http_app(host=host)
     key = _load_api_key()
     if key:
